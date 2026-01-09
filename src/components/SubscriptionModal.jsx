@@ -10,7 +10,7 @@ import { Loader2, Lock, ShieldCheck } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 
 // Initialize Stripe outside component
-const stripePromise = loadStripe("pk_live_51SmEju1SX0uvm0LeCfl4THqZvIW8t6fxNrwCSzSRUOLYpf9mdkkPzH7c9JNbNkchm6j5GBVBKBMNowCdnIYkLRuc00vL5qiMbo");
+const stripePromise = loadStripe("pk_test_51SmEju1SX0uvm0LejFgXv1vZf6pfHAgcbxkXyyffAeBM8J7An5MdauhCO4XDnavp4259NSAXjucg0rQIJtFqMOMZ00qbMv2Pk3");
 
 export default function SubscriptionModal({ isOpen, onOpenChange, selectedPlan }) {
   const [loading, setLoading] = useState(false);

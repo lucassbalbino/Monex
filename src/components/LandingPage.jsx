@@ -39,7 +39,7 @@ const LandingPage = () => {
   const handleSubscribe = (plan = null) => {
     // Default to Monthly plan with specific Price ID if none selected
     const selected = plan || { 
-      id: 'price_1SmFKb1SX0uvm0LeBdMYktdz', 
+      id: 'price_1SnT081SX0uvm0LewVODPSof', 
       name: 'Mensal', 
       price: 34.90, 
       interval: 'mês' 
@@ -489,7 +489,7 @@ const LandingPage = () => {
             </CardContent>
             <CardFooter className="pb-8">
               <Button 
-                onClick={() => handleSubscribe({ id: 'price_1SmFKb1SX0uvm0LeBdMYktdz', name: 'Mensal', price: 34.90, interval: 'mês' })}
+                onClick={() => handleSubscribe({ id: 'price_1SnT081SX0uvm0LewVODPSof', name: 'Mensal', price: 34.90, interval: 'mês' })}
                 className="w-full h-12 text-lg bg-[#14B8A6] hover:bg-[#0D9488] shadow-lg shadow-[#14B8A6]/25"
               >
                 Assinar Mensal

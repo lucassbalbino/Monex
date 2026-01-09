@@ -41,7 +41,7 @@ const PaymentPage = () => {
     // 3. Last Resort Fallback - Default to Monthly
     if (!plan) {
       plan = {
-        id: 'price_1SmFKb1SX0uvm0LeBdMYktdz',
+        id: 'price_1SnT081SX0uvm0LewVODPSof',
         name: 'Mensal',
         price: 34.90,
         interval: 'mês'
