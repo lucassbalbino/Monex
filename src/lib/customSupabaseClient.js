@@ -10,7 +10,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Supabase URL or Anon Key is not defined in environment variables.');
 }
 
-const customSupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+const customSupabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    
+  }
+});
 
 export default customSupabaseClient;
 
