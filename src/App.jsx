@@ -18,6 +18,7 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { initializeAdmin } from '@/lib/adminInit';
 import { Loader2 } from 'lucide-react';
 
+
 function App() {
   const [session, setSession] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null); 
