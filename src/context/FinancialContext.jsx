@@ -339,7 +339,7 @@ export const FinancialProvider = ({ children }) => {
   const modifyGoal = (id, updates) => {
     setGoals(prev => prev.map(g => {
       if (g.id !== id) return g;
-      return { ...g, ...updates };
+      return { ...g, ...updates };  
     }));
   };
 
