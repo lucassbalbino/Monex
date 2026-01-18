@@ -9,7 +9,7 @@ export function formatDataForLLM(clientData, credit_cards, debts, expenses, fina
 
    ### Credit Cards
    ${credit_cards.length > 0 ? credit_cards.map(card => `
-   - Card Nome: ${card.name}, Limite: ${card.limite}, Balance: ${card.current_bill}`, Vencimento: ${card.due_day}`).join('\n') : 'No credit cards found.'}
+   - Card Nome: ${card.name}, Limite: ${card.limite}, Balance: ${card.current_bill}, Vencimento: ${card.due_day}`).join('\n') : 'No credit cards found.'}
 
    ### Debts
    ${debts.length > 0 ? debts.map(debt => `
@@ -28,7 +28,6 @@ export function formatDataForLLM(clientData, credit_cards, debts, expenses, fina
    ### Goals
    ${goals.length > 0 ? goals.map(goal => `
    - Nome: ${goal.name}, Valor Alvo: $${goal.target_amount}, Progresso: $${goal.current_amount}, Data Alvo: ${goal.target_date}`).join('\n') : 'No goals found.'}
-
    ### Payments
    ${payments.length > 0 ? payments.map(payment => `
-   - Nome: ${payment.name}, Valor: $${payment.amount}, Data: ${payment.date}, Status: ${payment.status}`).join('\n') : 'No payments found.'}
+   - Nome: ${payment.name}, Valor: $${payment.amount}, Data: ${payment.date}, Status: ${payment.status}`).join('\n') : 'No payments found.'}}

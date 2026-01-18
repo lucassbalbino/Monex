@@ -14,6 +14,24 @@ export const useFinancialData = () => {
 };
 
 export const FinancialProvider = ({ children }) => {
+  const syncTable = async (table, storageKey, setStateFn, localData) => {
+   const {data, error} = await supabase.auth.getUser();
+   if (error || !data.user) return;
+   const { data: remoteData, error: fetchError } = await supabase
+     .from(table)
+     .select('*')
+     .eq('user_id', data.user.id);
+   if (fetchError) {
+     console.error(`Error fetching ${table} from Supabase`, fetchError);
+     return;
+   }
+   if (remoteData && remoteData.length > 0) { setStateFn(remoteData);
+   } else if (localData && localData.length > 0) {
+      for (const item of localData) {
+         await supabase.from(table).insert([{ ...item, user_id: data.user.id }]);
+    }
+   }
+   };
   const { toast } = useToast();
 
   // Persistence helper
@@ -26,7 +44,19 @@ export const FinancialProvider = ({ children }) => {
       return defaultValue;
     }
   };
-
+  const fetchFromSupabase = async (table, userId) => {
+    try {
+      const { data, error } = await supabase
+        .from(table)
+        .select('*')
+        .eq('user_id', userId);
+      if (error) throw error;
+      return data;
+    } catch (e) {
+      console.error(`Error fetching ${table} from Supabase`, e);
+      return null;
+    }
+  }
   // Helper to parse date string (YYYY-MM-DD) safely as local date
   const parseDate = (dateStr) => {
     if (!dateStr) return new Date();
@@ -134,7 +164,9 @@ export const FinancialProvider = ({ children }) => {
                ...profile, // Merge DB profile into local state
                name: profile.full_name || prev?.name,
                isSubscribed: profile.subscription_status === 'active' || profile.subscription_status === 'trialing'
-             }));
+             }
+            
+            ));
            }
         }
       } catch (error) {
@@ -144,6 +176,20 @@ export const FinancialProvider = ({ children }) => {
     
     fetchProfile();
   }, []);
+  useEffect(() => {
+    const syncAllData = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      await syncTable('transactions', 'monex_transactions', setTransactions, loadFromStorage('monex_transactions', []));
+      await syncTable('goals', 'monex_goals', setGoals, loadFromStorage('monex_goals', []));
+      await syncTable('debts', 'monex_debts', setDebts, loadFromStorage('monex_debts', []));
+      await syncTable('credit_cards', 'monex_credit_cards', setCreditCards, loadFromStorage('monex_credit_cards', []));
+      await syncTable('spending_limits', 'monex_limits', setSpendingLimits, loadFromStorage('monex_limits', []));
+    };
+
+    syncAllData();
+  }, [userProfile]);
   
   const defaultLimits = [
     { id: 1, name: 'Compras de Mercado', category: 'Mercado', limit: 800, spent: 0, period: 'Mensal', color: '#14B8A6', lastResetMonth: new Date().getMonth() },
@@ -241,6 +287,7 @@ export const FinancialProvider = ({ children }) => {
     setAnnualStats(annual);
   }, [transactions]);
 
+ 
   // --- Data Integrity & Sync ---
   useEffect(() => {
     const now = new Date();
@@ -277,25 +324,38 @@ export const FinancialProvider = ({ children }) => {
 
   // --- Actions ---
 
-  const addTransaction = (transaction) => {
+  const addTransaction = async (transaction) => {
     const newTransaction = {
       ...transaction,
       id: Date.now(),
       amount: parseFloat(transaction.amount)
     };
     setTransactions(prev => [newTransaction, ...prev]);
+    localStorage.setItem('monex_transactions', JSON.stringify([newTransaction, ...transactions]));
+    
+    const {data, error} = await supabase.auth.getUser();
+    if (data && data.user) {
+        await supabase.from('transactions').insert([{ ...newTransaction, user_id: data.user.id }]);
+      }
+
     if (newTransaction.type === 'expense') {
       updateLimitsWithExpense(newTransaction.category, newTransaction.amount, newTransaction.date);
     }
   };
 
-  const addTransactions = (newTransactions) => {
+  const addTransactions = async (newTransactions) => {
     const processedTransactions = newTransactions.map((t, index) => ({
       ...t,
       id: Date.now() + index,
       amount: parseFloat(t.amount)
-    }));
-    setTransactions(prev => [...processedTransactions.reverse(), ...prev]);
+    })).reverse();
+    setTransactions(prev => [...processedTransactions, ...prev]);
+      localStorage.setItem('monex_transactions', JSON.stringify([...processedTransactions, ...transactions]));
+      const {data, error} = await supabase.auth.getUser();
+      if (data && data.user) {
+        const toInsert = processedTransactions.map(t => ({ ...t, user_id: data.user.id }));
+        await supabase.from('transactions').insert(toInsert);
+      }
     processedTransactions.forEach(t => {
       if (t.type === 'expense') {
         updateLimitsWithExpense(t.category, t.amount, t.date);
@@ -326,7 +386,7 @@ export const FinancialProvider = ({ children }) => {
     }));
   };
 
-  const addGoal = (goal) => {
+  const addGoal = async (goal) => {
     const newGoal = {
       ...goal,
       id: Date.now(),
@@ -334,27 +394,33 @@ export const FinancialProvider = ({ children }) => {
       createdAt: new Date().toISOString()
     };
     setGoals(prev => [newGoal, ...prev]);
+    localStorage.setItem('monex_goals', JSON.stringify([newGoal, ...goals]));
+    const {data, error} = await supabase.auth.getUser();
+    if (data && data.user) {
+        await supabase.from('goals').insert([{ ...newGoal, user_id: data.user.id }]);
+      }
   };
 
-  const modifyGoal = (id, updates) => {
-    setGoals(prev => prev.map(g => {
-      if (g.id !== id) return g;
-      return { ...g, ...updates };  
-    }));
-  };
+  const modifyGoal = async (id, updates) => {
+   // 1. Cria novo array local atualizado
+   const updatedGoals = goals.map(g => g.id === id ? { ...g, ...updates } : g);
+ 
+   // 2. Atualiza state e localStorage
+   setGoals(updatedGoals);
+   localStorage.setItem('monex_goals', JSON.stringify(updatedGoals));
+ 
+   // 3. Atualiza o item correspondente no Supabase
+   const { data, error } = await supabase.auth.getUser();
+   if (data && data.user) {
+     await supabase.from('goals')
+       .update(updates)
+       .eq('id', id)
+       .eq('user_id', data.user.id);
+   }
+ };
 
-  const deleteGoal = (id) => {
-    const goal = goals.find(g => g.id === id);
-    if (goal?.isFixed) {
-      toast({
-        title: "Ação bloqueada",
-        description: "Esta é uma meta fixa do sistema e não pode ser excluída.",
-        variant: "destructive"
-      });
-      return;
-    }
-    setGoals(prev => prev.filter(g => g.id !== id));
-  };
+ const updatedGoals = goals.filter(g => g.id !== id);
+
   
   const resetToDefaultGoals = () => {
     setGoals(fixedGoals);
@@ -365,7 +431,7 @@ export const FinancialProvider = ({ children }) => {
   };
 
   // --- Debt Actions ---
-  const addDebt = (debt) => {
+  const addDebt = async (debt) => {
     const newDebt = {
       ...debt,
       id: Date.now(),
@@ -373,27 +439,50 @@ export const FinancialProvider = ({ children }) => {
       createdAt: new Date().toISOString()
     };
     setDebts(prev => [...prev, newDebt]);
+    localStorage.setItem('monex_debts', JSON.stringify([...debts, newDebt]));
+    const {data, error} = await supabase.auth.getUser();
+    if (data && data.user) {
+        await supabase.from('debts').insert([{ ...newDebt, user_id: data.user.id }]);
+      }
   };
 
-  const updateDebt = (id, updates) => {
+  const updateDebt = async (id, updates) => {
     setDebts(prev => prev.map(d => d.id === id ? { ...d, ...updates } : d));
+    const updatedDebts = debts.map(d => d.id === id ? { ...d, ...updates } : d);
+    localStorage.setItem('monex_debts', JSON.stringify(updatedDebts));
+    const {data, error} = await supabase.auth.getUser();
+    if (data && data.user) {
+        await supabase.from('debts')
+          .update(updates)
+          .eq('id', id)
+          .eq('user_id', data.user.id);
+      }
+
   };
 
-  const deleteDebt = (id) => {
+  const deleteDebt = async (id) => {
     setDebts(prev => prev.filter(d => d.id !== id));
+    localStorage.setItem('monex_debts', JSON.stringify(debts.filter(d => d.id !== id)));
+    const {data, error} = await supabase.auth.getUser();
+    if (data && data.user) {
+        await supabase.from('debts')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', data.user.id);
+      }
   };
 
-  const payDebt = (id, amount) => {
+  const payDebt = async (id, amount) => {
     const debt = debts.find(d => d.id === id);
     if (!debt) return;
 
     const paymentAmount = parseFloat(amount);
     
     // Update debt
-    updateDebt(id, { paidValue: Math.min(debt.paidValue + paymentAmount, debt.totalValue) });
+    await updateDebt(id, { paidValue: Math.min(debt.paidValue + paymentAmount, debt.totalValue) });
 
     // Record transaction
-    addTransaction({
+    await addTransaction({
       type: 'expense',
       amount: paymentAmount,
       date: new Date().toISOString().split('T')[0],
@@ -403,7 +492,7 @@ export const FinancialProvider = ({ children }) => {
   };
 
   // --- Credit Card Actions ---
-  const addCreditCard = (card) => {
+  const addCreditCard = async (card) => {
     const newCard = {
       ...card,
       id: Date.now(),
@@ -411,23 +500,46 @@ export const FinancialProvider = ({ children }) => {
       createdAt: new Date().toISOString()
     };
     setCreditCards(prev => [...prev, newCard]);
+    localStorage.setItem('monex_credit_cards', JSON.stringify([...creditCards, newCard]));
+    const {data, error} = await supabase.auth.getUser();
+      if (data && data.user) {
+         await supabase.from('credit_cards').insert([{ ...newCard, user_id: data.user.id }]);
+         }
+
   };
 
-  const updateCreditCard = (id, updates) => {
+  const updateCreditCard = async (id, updates) => {
     setCreditCards(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+    const updatedCards = creditCards.map(c => c.id === id ? { ...c, ...updates } : c);
+    localStorage.setItem('monex_credit_cards', JSON.stringify(updatedCards));
+    const {data, error} = await supabase.auth.getUser();
+    if (data && data.user) {
+        supabase.from('credit_cards')
+          .update(updates)
+          .eq('id', id)
+          .eq('user_id', data.user.id);
+      }
   };
 
-  const deleteCreditCard = (id) => {
+  const deleteCreditCard = async (id) => {
     setCreditCards(prev => prev.filter(c => c.id !== id));
+      localStorage.setItem('monex_credit_cards', JSON.stringify(creditCards.filter(c => c.id !== id)));
+      const {data, error} = await supabase.auth.getUser();
+      if (data && data.user) {
+        await supabase.from('credit_cards')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', data.user.id);
+      }
   };
 
-  const addInvoiceExpense = (cardId, amount, description) => {
+  const addInvoiceExpense = async (cardId, amount, description) => {
     // 1. Update card bill
     const numericAmount = parseFloat(amount);
-    updateCreditCard(cardId, { currentBill: (creditCards.find(c => c.id === cardId)?.currentBill || 0) + numericAmount });
+    await updateCreditCard(cardId, { currentBill: (creditCards.find(c => c.id === cardId)?.currentBill || 0) + numericAmount });
     
     // 2. Add to transaction history as an expense
-    addTransaction({
+    await addTransaction({
       type: 'expense',
       amount: numericAmount,
       date: new Date().toISOString().split('T')[0],
@@ -438,11 +550,14 @@ export const FinancialProvider = ({ children }) => {
 
   // --- Challenge Actions (Stubbed) ---
   const addChallenge = (challenge) => { console.warn("Disabled"); };
+
   const updateChallengeProgress = (id, type, amount) => { console.warn("Disabled"); };
+
   const modifyChallenge = (id, updates) => { console.warn("Disabled"); };
+
   const deleteChallenge = (id) => { console.warn("Disabled"); };
 
-  const addSpendingLimit = (limit) => {
+  const addSpendingLimit = async (limit) => {
     const newLimit = {
       ...limit,
       id: Date.now(),
@@ -451,23 +566,50 @@ export const FinancialProvider = ({ children }) => {
       color: ['#14B8A6', '#F59E0B', '#3B82F6', '#EF4444', '#8B5CF6'][Math.floor(Math.random() * 5)]
     };
     setSpendingLimits(prev => [newLimit, ...prev]);
+    localStorage.setItem('monex_limits', JSON.stringify([newLimit, ...spendingLimits]));
+    const {data, error} = await supabase.auth.getUser();
+      if (data && data.user) {
+         await supabase.from('spending_limits').insert([{ ...newLimit, user_id: data.user.id }]);
+         }
   };
 
-  const updateSpendingLimit = (id, updatedFields) => {
-    setSpendingLimits(prev => prev.map(limit => {
-      if (limit.id === id) {
-        return { ...limit, ...updatedFields };
-      }
-      return limit;
-    }));
-  };
+  const updateSpendingLimit = async (id, updatedFields) => {
+   // 1. Atualize o estado e o localStorage juntos
+   setSpendingLimits(prev => {
+     const updatedLimits = prev.map(limit =>
+       limit.id === id ? { ...limit, ...updatedFields } : limit
+     );
+     localStorage.setItem('monex_limits', JSON.stringify(updatedLimits));
+     return updatedLimits;
+   });
+ 
+   // 2. Atualize no Supabase (se o usuário estiver logado)
+   try {
+     const { data, error } = await supabase.auth.getUser();
+     if (error) throw error;
+     if (data && data.user) {
+       await supabase
+         .from('spending_limits')
+         .update(updatedFields)
+         .eq('id', id)
+         .eq('user_id', data.user.id);
+     }
+   } catch (e) {
+     console.error("Erro ao atualizar limite no Supabase:", e);
+   }
+ };
 
-  const deleteSpendingLimit = (id) => {
-    setSpendingLimits(prev => prev.filter(limit => limit.id !== id));
-  };
+ const deleteSpendingLimit = (id) => {
+   setSpendingLimits(prev => {
+     const updated = prev.filter(limit => limit.id !== id);
+     localStorage.setItem('monex_limits', JSON.stringify(updated));
+     return updated;
+   });
+ };
 
   const updateUserProfile = (profile) => {
     setUserProfile(profile);
+    
   };
 
   const clearUserProfile = () => {
