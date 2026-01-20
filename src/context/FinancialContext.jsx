@@ -418,8 +418,17 @@ export const FinancialProvider = ({ children }) => {
        .eq('user_id', data.user.id);
    }
  };
-
- const updatedGoals = goals.filter(g => g.id !== id);
+   const deleteGoal = async (id) => {
+      setGoals(prev => prev.filter(g => g.id !== id));
+      localStorage.setItem('monex_goals', JSON.stringify(goals.filter(g => g.id !== id)));
+      const {data, error} = await supabase.auth.getUser();
+      if (data && data.user) {
+        await supabase.from('goals')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', data.user.id);
+      }
+  };
 
   
   const resetToDefaultGoals = () => {
@@ -493,20 +502,35 @@ export const FinancialProvider = ({ children }) => {
 
   // --- Credit Card Actions ---
   const addCreditCard = async (card) => {
-    const newCard = {
-      ...card,
-      id: Date.now(),
-      currentBill: 0,
-      createdAt: new Date().toISOString()
-    };
-    setCreditCards(prev => [...prev, newCard]);
-    localStorage.setItem('monex_credit_cards', JSON.stringify([...creditCards, newCard]));
-    const {data, error} = await supabase.auth.getUser();
-      if (data && data.user) {
-         await supabase.from('credit_cards').insert([{ ...newCard, user_id: data.user.id }]);
-         }
-
-  };
+   const newCard = {
+     ...card,
+     id: Date.now(),
+     currentBill: 0,
+     createdAt: new Date().toISOString()
+   };
+   setCreditCards(prev => [...prev, newCard]);
+   localStorage.setItem('monex_credit_cards', JSON.stringify([...creditCards, newCard]));
+   const {data, error} = await supabase.auth.getUser();
+   if (!data || !data.user) {
+     console.error("Usuário não está autenticado! Cartão só salvo local.");
+     return;
+   }
+   const { error: insertError } = await supabase.from('credit_cards').insert([{ ...newCard, user_id: data.user.id }]);
+   if (insertError) {
+     // Exibe no console e na UI
+     console.error("Erro ao inserir cartão no Supabase:", insertError);
+     // Se você usa Toast no projeto:
+     toast({
+       title: "Erro ao salvar cartão no banco",
+       description: insertError.message || "Verifique sua conexão e as permissões.",
+       variant: "destructive"
+     });
+   } else {
+     // Sucesso opcional
+     console.log("Cartão salvo no Supabase com sucesso!");
+     // toast({ title: "Cartão salvo no banco!", description: "OK" });
+   }
+ };
 
   const updateCreditCard = async (id, updates) => {
     setCreditCards(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
