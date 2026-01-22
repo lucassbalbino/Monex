@@ -67,8 +67,7 @@ export const FinancialProvider = ({ children }) => {
   // --- Initial Data Loading ---
   const fixedGoals = [
     {
-      id: 'fixed_emergency',
-      name: 'Reserva de Emergência',
+      name: 'Reserva de Emergência ',
       description: 'Fundo essencial para cobrir 3-6 meses de despesas em caso de imprevistos.',
       targetAmount: 15000,
       currentAmount: 0,
@@ -78,7 +77,7 @@ export const FinancialProvider = ({ children }) => {
       category: 'Segurança'
     },
     {
-      id: 'fixed_investment',
+      
       name: 'Investimentos',
       description: 'Capital acumulado para liberdade financeira e crescimento de patrimônio.',
       targetAmount: 50000,
@@ -102,8 +101,8 @@ export const FinancialProvider = ({ children }) => {
     }
 
     // Migration: Ensure fixed goals exist and remove Vacation if present per request
-    const hasEmergency = savedGoals.some(g => g.id === 'fixed_emergency' || g.name === 'Reserva de Emergência');
-    const hasInvestment = savedGoals.some(g => g.id === 'fixed_investment' || g.name === 'Investimentos');
+    const hasEmergency = savedGoals.some(g => g.isFixed === true && g.name === 'Reserva de Emergência');
+    const hasInvestment = savedGoals.some(g => g.isFixed === true && g.name === 'Investimentos');
     
     let mergedGoals = [...savedGoals];
 
@@ -115,8 +114,8 @@ export const FinancialProvider = ({ children }) => {
 
     // Ensure they are marked fixed
     return mergedGoals.map(g => {
-      if (g.id === 'fixed_emergency' || g.name === 'Reserva de Emergência') return { ...g, isFixed: true };
-      if (g.id === 'fixed_investment' || g.name === 'Investimentos') return { ...g, isFixed: true };
+      if (g.isFixed === true && g.name === 'Reserva de Emergência') return { ...g, isFixed: true };
+      if (g.isFixed === true && g.name === 'Investimentos') return { ...g, isFixed: true };
       return g;
     });
   });
@@ -538,10 +537,13 @@ export const FinancialProvider = ({ children }) => {
     localStorage.setItem('monex_credit_cards', JSON.stringify(updatedCards));
     const {data, error} = await supabase.auth.getUser();
     if (data && data.user) {
-        supabase.from('credit_cards')
+        await supabase.from('credit_cards')
           .update(updates)
           .eq('id', id)
           .eq('user_id', data.user.id);
+          if (updateError) {
+            console.error("Erro ao atualizar cartão no Supabase:", updateError);
+          }
       }
   };
 
