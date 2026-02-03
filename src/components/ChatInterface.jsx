@@ -14,7 +14,8 @@ const ChatInterface = ({ className, compact = false }) => {
     monthlyStats, 
     goals, 
     transactions, 
-    spendingLimits 
+    spendingLimits,
+    userProfile
   } = useFinancialData();
 
   const [messages, setMessages] = useState([
@@ -37,47 +38,62 @@ const ChatInterface = ({ className, compact = false }) => {
   // This gives the AI the "eyes" to see the user's financial situation
   const getFinancialContext = () => {
     return {
-      saldoTotal: formatCurrency(stats.balance),
-      receitaMensal: formatCurrency(monthlyStats.income),
-      despesasMensais: formatCurrency(monthlyStats.expenses),
-      saldoMensalDisponivel: formatCurrency(monthlyStats.income - monthlyStats.expenses),
-      economiaAtual: formatCurrency(stats.balance),
+      usuario: userProfile ? {
+        nome: userProfile.name,
+        assinatura: userProfile.isSubscribed,
+        // outros campos relevantes
+      } : null,
+      saldoTotal: stats.balance,
+      saldoTotalFormatado: formatCurrency(stats.balance),
+      receitaMensal: monthlyStats.income,
+      despesasMensais: monthlyStats.expenses,
+      saldoMensalDisponivel: monthlyStats.income - monthlyStats.expenses,
       metas: goals.map(g => ({
+        id: g.id,
         nome: g.name,
-        alvo: formatCurrency(g.targetAmount),
-        atual: formatCurrency(g.currentAmount),
-        progresso: `${Math.round((g.currentAmount / g.targetAmount) * 100)}%`
+        alvo: g.targetAmount,
+        alvoFormatado: formatCurrency(g.targetAmount),
+        atual: g.currentAmount,
+        progresso: g.targetAmount ? Math.round((g.currentAmount / g.targetAmount) * 100) : 0,
+        categoria: g.category
       })),
       ultimasTransacoes: transactions.slice(0, 5).map(t => ({
-        tipo: t.type === 'income' ? 'Receita' : 'Despesa',
+        id: t.id,
+        tipo: t.type,
         categoria: t.category,
-        valor: formatCurrency(t.amount),
+        valor: t.amount,
+        valorFormatado: formatCurrency(t.amount),
         data: t.date,
         descricao: t.description
       })),
       limitesGastos: spendingLimits.map(l => ({
+        id: l.id,
         categoria: l.category,
-        limite: formatCurrency(l.limit),
-        gasto: formatCurrency(l.spent),
-        restante: formatCurrency(l.limit - l.spent),
+        limite: l.limit,
+        limiteFormatado: formatCurrency(l.limit),
+        gasto: l.spent,
+        gastoFormatado: formatCurrency(l.spent),
+        restante: l.limit - l.spent,
+        restanteFormatado: formatCurrency(l.limit - l.spent),
         periodo: l.period
-      }))
+      })),
+      alertas: [], // Array vazio por enquanto, pode implementar depois
+      dataAtual: new Date().toISOString().split('T')[0]
     };
   };
 
   const generateResponse = async (userQuery) => {
     setIsLoading(true);
-    
     // Keep conversation history for context within the session
     const conversationHistory = messages.slice(-10).map(m => ({
       role: m.type === 'bot' ? 'assistant' : 'user',
       content: m.text
     }));
 
+    let fallbackUsed = false;
     try {
       const currentContext = getFinancialContext();
-      
-      // Call the Supabase Edge Function
+      console.log('[MonexAI] Enviando contexto para IA:', currentContext);
       const { data, error } = await supabase.functions.invoke('smart-endpoint', {
         body: {
           message: userQuery,
@@ -85,31 +101,25 @@ const ChatInterface = ({ className, compact = false }) => {
           history: conversationHistory
         }
       });
-
       if (error) {
-        console.error('Supabase Function Error:', error);
+        console.error('[MonexAI] Supabase Function Error:', error);
+        fallbackUsed = true;
         throw error;
       }
-
-      // Handle different possible response structures from the generic endpoint
+      console.log('[MonexAI] Resposta recebida:', data);
       const botReply = data?.reply || data?.message || data?.content || (typeof data === 'string' ? data : "Não consegui gerar uma resposta. Tente novamente.");
-
       setMessages(prev => [...prev, { id: Date.now(), type: 'bot', text: botReply }]);
     } catch (error) {
-      console.error('Erro no chat:', error);
-      
-      // Fallback response if the edge function fails or is not deployed yet
+      console.error('[MonexAI] Erro no chat:', error);
       const fallbackResponse = "O serviço de IA está temporariamente indisponível. Verifique se a Edge Function 'smart-endpoint' está implantada corretamente no Supabase.";
-      
       setMessages(prev => [...prev, { 
         id: Date.now(), 
         type: 'bot', 
-        text: fallbackResponse
+        text: fallbackResponse + (error?.message ? `\n[Erro: ${error.message}]` : '')
       }]);
-
       toast({
         title: "Erro de Conexão",
-        description: "Não foi possível conectar ao assistente inteligente.",
+        description: error?.message ? error.message : "Não foi possível conectar ao assistente inteligente.",
         variant: "destructive"
       });
     } finally {

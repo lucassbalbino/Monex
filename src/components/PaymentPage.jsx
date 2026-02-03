@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ShieldCheck, CheckCircle2, CreditCard, Loader2, ArrowLeft } from 'lucide-react';
+import { loadStripe } from '@stripe/stripe-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/components/ui/use-toast";
@@ -38,10 +39,9 @@ const PaymentPage = () => {
       }
     }
 
-    // 3. Last Resort Fallback - Default to Monthly
+    // 3. Last Resort Fallback - Default to Monthly (id will be resolved from DB)
     if (!plan) {
       plan = {
-        id: 'price_1SnT081SX0uvm0LewVODPSof',
         name: 'Mensal',
         price: 34.90,
         interval: 'mês'
@@ -57,27 +57,99 @@ const PaymentPage = () => {
 
     try {
       console.log('Initiating checkout for:', selectedPlan.name);
-      
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: {
-          priceId: selectedPlan.id,
-          email: user.email,
-          userId: user.id,
-          origin: window.location.origin
+      // Prefer explicit stripe_price_id on plan, fall back to id
+      let priceId = selectedPlan?.stripe_price_id || selectedPlan?.priceId || selectedPlan?.id;
+
+      // If no priceId available (e.g. plan came without id), try to resolve from DB
+      if (!priceId) {
+        try {
+          const { data: planFromDb, error } = await supabase
+            .from('plans')
+            .select('id, name, stripe_price_id, stripe_price_id_test')
+            .ilike('name', selectedPlan?.name || '')
+            .limit(1)
+            .maybeSingle();
+
+          if (!error && planFromDb) {
+            const isProd = import.meta.env.MODE === 'production';
+            priceId = isProd
+              ? planFromDb.stripe_price_id || planFromDb.id
+              : planFromDb.stripe_price_id_test || planFromDb.stripe_price_id || planFromDb.id;
+            console.log('[PaymentPage] resolved priceId from DB:', priceId);
+          }
+        } catch (e) {
+          console.warn('[PaymentPage] failed to resolve priceId from DB', e);
         }
+      }
+
+      if (!priceId) {
+        // Final fallback: try to fetch any plan from DB and use its id
+        try {
+          const { data: anyPlan, error: anyPlanErr } = await supabase
+            .from('plans')
+            .select('id, name, stripe_price_id, stripe_price_id_test')
+            .limit(1)
+            .maybeSingle();
+
+          if (!anyPlanErr && anyPlan) {
+            const isProd = import.meta.env.MODE === 'production';
+            priceId = isProd
+              ? anyPlan.stripe_price_id || anyPlan.id
+              : anyPlan.stripe_price_id_test || anyPlan.stripe_price_id || anyPlan.id;
+            console.log('[PaymentPage] fallback resolved priceId from anyPlan:', priceId);
+          }
+        } catch (e) {
+          console.warn('[PaymentPage] failed to fetch fallback plan', e);
+        }
+      }
+
+      if (!priceId) {
+        setLoading(false);
+        toast({
+          title: 'Plano inválido',
+          description: 'Não foi possível determinar o plano. Selecione um plano novamente.',
+          variant: 'destructive'
+        });
+        navigate('/');
+        return;
+      }
+
+      const payload = {
+        priceId,
+        email: user.email,
+        userId: user.id,
+        origin: window.location.origin
+      };
+
+      console.log('[PaymentPage] create-checkout-session payload:', payload);
+
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: payload
       });
 
       if (error) {
         console.error('Edge function error:', error);
+        // log any returned data for diagnostics
+        console.error('Edge function returned data:', data);
         throw error;
       }
       
-      // Use the URL returned by the backend to redirect
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('URL de pagamento não encontrada.');
+      // Use the URL returned by the backend to redirect (checkoutUrl or generic url)
+      const redirectUrl = data?.checkoutUrl || data?.url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+        return;
       }
+
+      // If backend returned only a sessionId, use Stripe.js to redirect
+      if (data?.sessionId) {
+        const stripe = await loadStripe("pk_test_51SmEju1SX0uvm0LejFgXv1vZf6pfHAgcbxkXyyffAeBM8J7An5MdauhCO4XDnavp4259NSAXjucg0rQIJtFqMOMZ00qbMv2Pk3");
+        const { error: stripeError } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
+        if (stripeError) throw stripeError;
+        return;
+      }
+
+      throw new Error('URL de pagamento não encontrada.');
 
     } catch (error) {
       console.error('Checkout error:', error);

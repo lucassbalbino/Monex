@@ -67,9 +67,11 @@ export default function SubscriptionModal({ isOpen, onOpenChange, selectedPlan }
       sessionStorage.setItem('monex_pending_signup', JSON.stringify(formData));
 
       console.log('[SubscriptionModal] Invoking edge function create-checkout-session...');
+      // Prefer explicit stripe_price_id field on the plan; fall back to id for backwards compatibility
+      const priceId = selectedPlan?.stripe_price_id || selectedPlan?.priceId || selectedPlan?.id;
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
-          priceId: selectedPlan.id,
+          priceId,
           email: formData.email,
           fullName: formData.fullName,
           phone: formData.phone,

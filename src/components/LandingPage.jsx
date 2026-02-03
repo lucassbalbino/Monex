@@ -22,6 +22,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/customSupabaseClient';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 
 const LandingPage = () => {
@@ -36,21 +37,42 @@ const LandingPage = () => {
     setIsMenuOpen(false);
   };
 
-  const handleSubscribe = (plan = null) => {
-    // Default to Monthly plan with specific Price ID if none selected
-    const selected = plan || { 
-      id: 'price_1SnT081SX0uvm0LewVODPSof', 
+  const handleSubscribe = async (plan = null) => {
+    // Default to Monthly plan if none selected
+    let selected = plan || { 
       name: 'Mensal', 
       price: 34.90, 
       interval: 'mês' 
     };
-    
+
+    // Try to resolve the correct stripe price id from the DB (prefer test id in dev)
+    try {
+      const { data: planFromDb, error } = await supabase
+        .from('plans')
+        .select('id, name, stripe_price_id, stripe_price_id_test')
+        .ilike('name', selected.name)
+        .limit(1)
+        .maybeSingle();
+
+      if (!error && planFromDb) {
+        const isProd = import.meta.env.MODE === 'production';
+        const resolvedPriceId = isProd
+          ? planFromDb.stripe_price_id || planFromDb.id
+          : planFromDb.stripe_price_id_test || planFromDb.stripe_price_id || planFromDb.id;
+
+        selected = { ...selected, id: resolvedPriceId };
+      }
+    } catch (e) {
+      console.warn('[LandingPage] failed to resolve plan from DB, falling back to provided values', e);
+      if (!selected.id) selected.id = 'price_1SnT081SX0uvm0LewVODPSof';
+    }
+
     // Store in session storage as backup
     sessionStorage.setItem('monex_selected_plan', JSON.stringify(selected));
 
     // Navigate to register with plan state
     navigate('/register', { 
-        state: { plan: selected } 
+      state: { plan: selected } 
     });
   };
 
@@ -489,7 +511,7 @@ const LandingPage = () => {
             </CardContent>
             <CardFooter className="pb-8">
               <Button 
-                onClick={() => handleSubscribe({ id: 'price_1SnT081SX0uvm0LewVODPSof', name: 'Mensal', price: 34.90, interval: 'mês' })}
+                onClick={() => handleSubscribe({ name: 'Mensal', price: 34.90, interval: 'mês' })}
                 className="w-full h-12 text-lg bg-[#14B8A6] hover:bg-[#0D9488] shadow-lg shadow-[#14B8A6]/25"
               >
                 Assinar Mensal
@@ -512,7 +534,7 @@ const LandingPage = () => {
             </CardContent>
             <CardFooter>
               <Button 
-                onClick={() => handleSubscribe({ id: 'price_1SmHUN1SX0uvm0LeeBv5W0Es', name: 'Anual', price: 350.00, interval: 'ano' })}
+                onClick={() => handleSubscribe({ name: 'Anual', price: 350.00, interval: 'ano' })}
                 variant="outline" 
                 className="w-full border-[#334155] hover:bg-[#0F172A] hover:text-white"
               >

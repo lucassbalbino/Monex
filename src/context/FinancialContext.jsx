@@ -5,15 +5,15 @@ import { supabase } from '@/lib/customSupabaseClient';
 
 const FinancialContext = createContext();
 
-export const useFinancialData = () => {
+export function useFinancialData() {
   const context = useContext(FinancialContext);
   if (!context) {
     throw new Error('useFinancialData must be used within a FinancialProvider');
   }
   return context;
-};
+}
 
-export const FinancialProvider = ({ children }) => {
+export function FinancialProvider({ children }) {
   const syncTable = async (table, storageKey, setStateFn, localData) => {
    const {data, error} = await supabase.auth.getUser();
    if (error || !data.user) return;
@@ -67,7 +67,7 @@ export const FinancialProvider = ({ children }) => {
   // --- Initial Data Loading ---
   const fixedGoals = [
     {
-      name: 'Reserva de Emergência ',
+      name: 'Reserva de Emergência',
       description: 'Fundo essencial para cobrir 3-6 meses de despesas em caso de imprevistos.',
       targetAmount: 15000,
       currentAmount: 0,
@@ -77,7 +77,6 @@ export const FinancialProvider = ({ children }) => {
       category: 'Segurança'
     },
     {
-      
       name: 'Investimentos',
       description: 'Capital acumulado para liberdade financeira e crescimento de patrimônio.',
       targetAmount: 50000,
@@ -94,30 +93,27 @@ export const FinancialProvider = ({ children }) => {
   // Goals State with enforcement of fixed goals
   const [goals, setGoals] = useState(() => {
     let savedGoals = loadFromStorage('monex_goals', []);
-    
-    // If no goals, start with fixed ones
-    if (!savedGoals || savedGoals.length === 0) {
-      return fixedGoals;
-    }
-
-    // Migration: Ensure fixed goals exist and remove Vacation if present per request
-    const hasEmergency = savedGoals.some(g => g.isFixed === true && g.name === 'Reserva de Emergência');
-    const hasInvestment = savedGoals.some(g => g.isFixed === true && g.name === 'Investimentos');
-    
-    let mergedGoals = [...savedGoals];
-
     // Remove legacy Vacation fund if it exists
-    mergedGoals = mergedGoals.filter(g => g.id !== 'default_vacation' && g.name !== 'Fundo de Férias');
-
+    savedGoals = savedGoals.filter(g => g.id !== 'default_vacation' && g.name !== 'Fundo de Férias');
+    // Normaliza nomes para evitar duplicidade
+    const normalize = s => s.trim().toLowerCase();
+    const hasEmergency = savedGoals.some(g => g.isFixed === true && normalize(g.name) === normalize(fixedGoals[0].name));
+    const hasInvestment = savedGoals.some(g => g.isFixed === true && normalize(g.name) === normalize(fixedGoals[1].name));
+    let mergedGoals = [...savedGoals];
     if (!hasEmergency) mergedGoals.unshift(fixedGoals[0]);
     if (!hasInvestment) mergedGoals.push(fixedGoals[1]);
-
-    // Ensure they are marked fixed
-    return mergedGoals.map(g => {
-      if (g.isFixed === true && g.name === 'Reserva de Emergência') return { ...g, isFixed: true };
-      if (g.isFixed === true && g.name === 'Investimentos') return { ...g, isFixed: true };
-      return g;
-    });
+    // Remove duplicatas de metas fixas (mantém só uma de cada)
+    const uniqueGoals = [];
+    const seen = new Set();
+    for (const g of mergedGoals) {
+      if (g.isFixed) {
+        const key = normalize(g.name);
+        if (seen.has(key)) continue;
+        seen.add(key);
+      }
+      uniqueGoals.push(g);
+    }
+    return uniqueGoals;
   });
   
   const [userProfile, setUserProfile] = useState(() => {
@@ -191,10 +187,26 @@ export const FinancialProvider = ({ children }) => {
   }, [userProfile]);
   
   const defaultLimits = [
-    { id: 1, name: 'Compras de Mercado', category: 'Mercado', limit: 800, spent: 0, period: 'Mensal', color: '#14B8A6', lastResetMonth: new Date().getMonth() },
-    { id: 2, name: 'Lazer Fim de Semana', category: 'Lazer e Hobbies', limit: 300, spent: 0, period: 'Semanal', color: '#F59E0B', lastResetMonth: new Date().getMonth() }
+    { name: 'Compras de Mercado', category: 'Mercado', limit: 800, spent: 0, period: 'Mensal', color: '#14B8A6', lastResetMonth: new Date().getMonth() },
+    { name: 'Lazer Fim de Semana', category: 'Lazer e Hobbies', limit: 300, spent: 0, period: 'Semanal', color: '#F59E0B', lastResetMonth: new Date().getMonth() }
   ];
-  const [spendingLimits, setSpendingLimits] = useState(() => loadFromStorage('monex_limits', defaultLimits));
+  const [spendingLimits, setSpendingLimits] = useState(() => {
+    const saved = loadFromStorage('monex_limits', []);
+    if (!saved || saved.length === 0) {
+      return defaultLimits;
+    }
+    // Remove duplicatas de limites fixos pelo nome
+    const normalize = s => s.trim().toLowerCase();
+    const uniqueLimits = [];
+    const seen = new Set();
+    for (const limit of saved) {
+      const key = normalize(limit.name);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      uniqueLimits.push(limit);
+    }
+    return uniqueLimits;
+  });
 
   const [challenges, setChallenges] = useState([]); 
 
@@ -324,28 +336,31 @@ export const FinancialProvider = ({ children }) => {
   // --- Actions ---
 
   const addTransaction = async (transaction) => {
-    const newTransaction = {
-      ...transaction,
-      id: Date.now(),
-      amount: parseFloat(transaction.amount)
-    };
-    setTransactions(prev => [newTransaction, ...prev]);
-    localStorage.setItem('monex_transactions', JSON.stringify([newTransaction, ...transactions]));
-    
-    const {data, error} = await supabase.auth.getUser();
-    if (data && data.user) {
-        await supabase.from('transactions').insert([{ ...newTransaction, user_id: data.user.id }]);
+   const {data, error} = await supabase.auth.getUser();
+   if (!data || !data.user) return; {
+     console.error("Usuário não autenticado. Transação só salva localmente.");
+   }
+     const newTransaction = {
+        ...transaction,
+        user_id: data.user.id,
+        amount: parseFloat(transaction.amount)
+      };
+      // Remove o campo 'id' se existir
+      const { id, ...transactionData } = newTransaction;
+      setTransactions(prev => [transactionData, ...prev]);
+      localStorage.setItem('monex_transactions', JSON.stringify([transactionData, ...transactions]));
+      if (data && data.user) {
+        await supabase.from('transactions').insert([transactionData]);
       }
-
-    if (newTransaction.type === 'expense') {
-      updateLimitsWithExpense(newTransaction.category, newTransaction.amount, newTransaction.date);
-    }
+      if (transactionData.type === 'expense') {
+        updateLimitsWithExpense(transactionData.category, transactionData.amount, transactionData.date);
+      }
   };
 
   const addTransactions = async (newTransactions) => {
     const processedTransactions = newTransactions.map((t, index) => ({
       ...t,
-      id: Date.now() + index,
+      
       amount: parseFloat(t.amount)
     })).reverse();
     setTransactions(prev => [...processedTransactions, ...prev]);
@@ -388,7 +403,6 @@ export const FinancialProvider = ({ children }) => {
   const addGoal = async (goal) => {
     const newGoal = {
       ...goal,
-      id: Date.now(),
       currentAmount: 0,
       createdAt: new Date().toISOString()
     };
@@ -442,7 +456,6 @@ export const FinancialProvider = ({ children }) => {
   const addDebt = async (debt) => {
     const newDebt = {
       ...debt,
-      id: Date.now(),
       paidValue: 0,
       createdAt: new Date().toISOString()
     };
@@ -485,18 +498,28 @@ export const FinancialProvider = ({ children }) => {
     if (!debt) return;
 
     const paymentAmount = parseFloat(amount);
-    
     // Update debt
     await updateDebt(id, { paidValue: Math.min(debt.paidValue + paymentAmount, debt.totalValue) });
 
-    // Record transaction
-    await addTransaction({
+    // Cria a transação de pagamento de dívida
+    const transaction = {
       type: 'expense',
       amount: paymentAmount,
       date: new Date().toISOString().split('T')[0],
       description: `Pagamento de Dívida: ${debt.name}`,
-      category: 'Dívidas'
-    });
+      category: 'Dívidas',
+      debt_id: id // Relaciona a transação à dívida
+    };
+
+    // Adiciona localmente e persiste
+    setTransactions(prev => [transaction, ...prev]);
+    localStorage.setItem('monex_transactions', JSON.stringify([transaction, ...transactions]));
+
+    // Persiste no Supabase
+    const {data, error} = await supabase.auth.getUser();
+    if (data && data.user) {
+      await supabase.from('transactions').insert([{ ...transaction, user_id: data.user.id }]);
+    }
   };
 
   // --- Credit Card Actions ---
@@ -531,20 +554,28 @@ export const FinancialProvider = ({ children }) => {
    }
  };
 
-  const updateCreditCard = async (id, updates) => {
-    setCreditCards(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
-    const updatedCards = creditCards.map(c => c.id === id ? { ...c, ...updates } : c);
-    localStorage.setItem('monex_credit_cards', JSON.stringify(updatedCards));
+  const updateCreditCard = async (id, updatesOrUpdater) => {
+    setCreditCards(prev => {
+      const updatedCards = prev.map(c => {
+        if (c.id === id) {
+          const updates = typeof updatesOrUpdater === 'function' ? updatesOrUpdater(c) : updatesOrUpdater;
+          return { ...c, ...updates };
+        }
+        return c;
+      });
+      localStorage.setItem('monex_credit_cards', JSON.stringify(updatedCards));
+      return updatedCards;
+    });
+    // Para garantir que o valor enviado ao Supabase é o correto, busque o cartão atualizado do estado
+    const card = creditCards.find(c => c.id === id);
+    const updates = typeof updatesOrUpdater === 'function' ? updatesOrUpdater(card) : updatesOrUpdater;
     const {data, error} = await supabase.auth.getUser();
     if (data && data.user) {
-        await supabase.from('credit_cards')
-          .update(updates)
-          .eq('id', id)
-          .eq('user_id', data.user.id);
-          if (updateError) {
-            console.error("Erro ao atualizar cartão no Supabase:", updateError);
-          }
-      }
+      await supabase.from('credit_cards')
+        .update(updates)
+        .eq('id', id)
+        .eq('user_id', data.user.id);
+    }
   };
 
   const deleteCreditCard = async (id) => {
@@ -560,10 +591,9 @@ export const FinancialProvider = ({ children }) => {
   };
 
   const addInvoiceExpense = async (cardId, amount, description) => {
-    // 1. Update card bill
+    // 1. Update card bill de forma segura
     const numericAmount = parseFloat(amount);
-    await updateCreditCard(cardId, { currentBill: (creditCards.find(c => c.id === cardId)?.currentBill || 0) + numericAmount });
-    
+    await updateCreditCard(cardId, (card) => ({ currentBill: (card?.currentBill || 0) + numericAmount }));
     // 2. Add to transaction history as an expense
     await addTransaction({
       type: 'expense',
@@ -584,9 +614,9 @@ export const FinancialProvider = ({ children }) => {
   const deleteChallenge = (id) => { console.warn("Disabled"); };
 
   const addSpendingLimit = async (limit) => {
+    const { id, ...limitData } = limit;
     const newLimit = {
-      ...limit,
-      id: Date.now(),
+      ...limitData,
       spent: 0,
       lastResetMonth: new Date().getMonth(),
       color: ['#14B8A6', '#F59E0B', '#3B82F6', '#EF4444', '#8B5CF6'][Math.floor(Math.random() * 5)]
@@ -594,9 +624,9 @@ export const FinancialProvider = ({ children }) => {
     setSpendingLimits(prev => [newLimit, ...prev]);
     localStorage.setItem('monex_limits', JSON.stringify([newLimit, ...spendingLimits]));
     const {data, error} = await supabase.auth.getUser();
-      if (data && data.user) {
-         await supabase.from('spending_limits').insert([{ ...newLimit, user_id: data.user.id }]);
-         }
+    if (data && data.user) {
+      await supabase.from('spending_limits').insert([{ ...newLimit, user_id: data.user.id }]);
+    }
   };
 
   const updateSpendingLimit = async (id, updatedFields) => {

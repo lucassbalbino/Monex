@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import Dashboard from '@/components/Dashboard';
 import LandingPage from '@/components/LandingPage';
+import PlansPage from '@/components/PlansPage';
 import RegisterPage from '@/components/RegisterPage';
 import LoginPage from '@/components/LoginPage';
 import PaymentPage from '@/components/PaymentPage';
@@ -129,6 +130,9 @@ function App() {
           path="/landing" 
           element={!session || isAdmin ? <LandingPage /> : <Navigate to="/" replace />} 
         />
+
+        {/* Plans selector */}
+        <Route path="/plans" element={<PlansPage />} />
         
         {/* Main Application Route */}
         <Route path="/" element={

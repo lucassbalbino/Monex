@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Trash2, Edit2, UploadCloud, CreditCard as CardIcon, Calendar, DollarSign, Lock, FileText } from 'lucide-react';
@@ -22,7 +21,7 @@ const BANKS = [
 ];
 
 const CreditCardView = () => {
-  const { creditCards, addCreditCard, deleteCreditCard, updateCreditCard, addInvoiceExpense } = useFinancialData();
+  const { creditCards, addCreditCard, deleteCreditCard, updateCreditCard, addInvoiceExpense, setCreditCards } = useFinancialData();
   const { toast } = useToast();
 
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -56,6 +55,11 @@ const CreditCardView = () => {
 
     if (editingCard) {
       updateCreditCard(editingCard.id, cardData);
+      setCreditCards(prev => {
+        const updated = prev.map(c => c.id === editingCard.id ? { ...c, ...cardData } : c);
+        localStorage.setItem('monex_credit_cards', JSON.stringify(updated));
+        return updated;
+      });
       toast({ title: "Sucesso", description: "Cartão atualizado!" });
     } else {
       addCreditCard(cardData);
