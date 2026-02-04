@@ -8,6 +8,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Loader2, Lock, ShieldCheck } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
+import { logger } from '@/lib/logger';
 
 // Initialize Stripe outside component
 const stripePromise = loadStripe("pk_test_51SmEju1SX0uvm0LejFgXv1vZf6pfHAgcbxkXyyffAeBM8J7An5MdauhCO4XDnavp4259NSAXjucg0rQIJtFqMOMZ00qbMv2Pk3");
@@ -19,7 +20,7 @@ export default function SubscriptionModal({ isOpen, onOpenChange, selectedPlan }
   // Debug logging
   useEffect(() => {
     if (isOpen) {
-      console.log(`[SubscriptionModal] Modal OPENING. Plan: ${selectedPlan?.name}`);
+    logger.info(`Modal de assinatura abrindo. Plano: ${selectedPlan?.name}`);
     }
   }, [isOpen, selectedPlan]);
 
@@ -57,16 +58,16 @@ export default function SubscriptionModal({ isOpen, onOpenChange, selectedPlan }
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
-    console.log('[SubscriptionModal] Starting subscription process...');
+logger.info('Iniciando processo de assinatura');
     
     if (!validateForm()) return;
 
     setLoading(true);
     try {
-      console.log('[SubscriptionModal] Saving temp data...');
+      logger.info('Salvando dados temporários');
       sessionStorage.setItem('monex_pending_signup', JSON.stringify(formData));
 
-      console.log('[SubscriptionModal] Invoking edge function create-checkout-session...');
+      logger.info('Invocando edge function create-checkout-session');
       // Prefer explicit stripe_price_id field on the plan; fall back to id for backwards compatibility
       const priceId = selectedPlan?.stripe_price_id || selectedPlan?.priceId || selectedPlan?.id;
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
@@ -89,7 +90,7 @@ export default function SubscriptionModal({ isOpen, onOpenChange, selectedPlan }
         throw new Error('Sessão inválida retornada');
       }
 
-      console.log('[SubscriptionModal] Redirecting to Stripe with session:', data.sessionId);
+      logger.info('Redirecionando para Stripe', { sessionId: data.sessionId });
       const stripe = await stripePromise;
       const { error: stripeError } = await stripe.redirectToCheckout({
         sessionId: data.sessionId

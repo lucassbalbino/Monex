@@ -31,15 +31,15 @@ const StatsCard = ({
       className="bg-[#1E293B] rounded-xl p-6 border border-[#334155] hover:border-[#14B8A6] transition-all duration-300 relative overflow-hidden"
     >
       <div className="flex items-start justify-between mb-4">
-        <div className="bg-[#334155] rounded-lg p-3 z-10">
+        <div className="bg-[#334155] rounded-xl p-3 z-10">
           <Icon className="h-6 w-6" style={{ color }} />
         </div>
         
         {enableToggle ? (
-          <div className="flex bg-[#0F172A] rounded-lg p-0.5 border border-[#334155] z-10">
+          <div className="flex bg-[#0F172A] rounded-xl p-0.5 z-10">
             <button
               onClick={() => onToggle('monthly')}
-              className={`px-2 py-1 text-[10px] font-medium rounded-md transition-all ${
+              className={`px-2 py-1 text-[10px] font-medium rounded-xl transition-all ${
                 viewMode === 'monthly' 
                   ? 'bg-[#334155] text-white shadow-sm' 
                   : 'text-gray-400 hover:text-white'
@@ -49,7 +49,7 @@ const StatsCard = ({
             </button>
             <button
               onClick={() => onToggle('annual')}
-              className={`px-2 py-1 text-[10px] font-medium rounded-md transition-all ${
+              className={`px-2 py-1 text-[10px] font-medium rounded-xl transition-all ${
                 viewMode === 'annual' 
                   ? 'bg-[#334155] text-white shadow-sm' 
                   : 'text-gray-400 hover:text-white'

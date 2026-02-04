@@ -6,6 +6,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { useFinancialData } from '@/context/FinancialContext';
 import { formatCurrency } from '@/lib/utils';
 import { supabase } from '@/lib/customSupabaseClient';
+import { logger } from '@/lib/logger';
+import { securityUtils } from '@/lib/security';
 
 const ChatInterface = ({ className, compact = false }) => {
   // Access real data from context
@@ -18,13 +20,56 @@ const ChatInterface = ({ className, compact = false }) => {
     userProfile
   } = useFinancialData();
 
+  const [userId, setUserId] = useState(null);
   const [messages, setMessages] = useState([
     { id: 1, type: 'bot', text: 'Olá! Sou o Monex, seu assistente financeiro inteligente. Analiso seus dados em tempo real para te dar as melhores dicas. Como posso ajudar hoje?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const activeRequestIdRef = useRef(0);
   const messagesEndRef = useRef(null);
   const { toast } = useToast();
+
+  const storageKey = userId ? `chatMessages_${userId}` : 'chatMessages';
+
+  // Get user ID for per-user persistence
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        setUserId(data?.session?.user?.id || null);
+      } catch (error) {
+        console.error('Error getting user session:', error);
+        setUserId(null);
+      }
+    };
+    getUser();
+  }, []);
+
+  // Load messages from localStorage on mount or userId change
+  useEffect(() => {
+    if (userId !== null) {
+      const savedMessages = localStorage.getItem(storageKey);
+      if (savedMessages) {
+        try {
+          const parsed = JSON.parse(savedMessages);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMessages(parsed);
+          }
+        } catch (error) {
+          console.error('Error parsing saved messages:', error);
+          // Fallback to default
+        }
+      }
+    }
+  }, [userId, storageKey]);
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (userId !== null && messages.length > 0) {
+      localStorage.setItem(storageKey, JSON.stringify(messages));
+    }
+  }, [messages, userId, storageKey]);
 
   useEffect(() => {
     scrollToBottom();
@@ -83,6 +128,8 @@ const ChatInterface = ({ className, compact = false }) => {
   };
 
   const generateResponse = async (userQuery) => {
+    const requestId = Date.now();
+    activeRequestIdRef.current = requestId;
     setIsLoading(true);
     // Keep conversation history for context within the session
     const conversationHistory = messages.slice(-10).map(m => ({
@@ -93,24 +140,40 @@ const ChatInterface = ({ className, compact = false }) => {
     let fallbackUsed = false;
     try {
       const currentContext = getFinancialContext();
-      console.log('[MonexAI] Enviando contexto para IA:', currentContext);
-      const { data, error } = await supabase.functions.invoke('smart-endpoint', {
+      logger.secure('Enviando contexto para IA');
+      let headers;
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token || sessionData?.access_token || null;
+        if (accessToken) headers = { Authorization: `Bearer ${accessToken}` };
+      } catch (e) {
+        // ignore if auth not available
+      }
+
+      const invokePromise = supabase.functions.invoke('smart-endpoint', {
         body: {
           message: userQuery,
           context: currentContext,
           history: conversationHistory
-        }
+        },
+        headers
       });
+      const timeoutMs = 35000;
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Tempo limite ao consultar o assistente. Tente novamente.')), timeoutMs);
+      });
+
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
       if (error) {
         console.error('[MonexAI] Supabase Function Error:', error);
         fallbackUsed = true;
         throw error;
       }
-      console.log('[MonexAI] Resposta recebida:', data);
+      logger.info('Resposta recebida da IA', { replyLength: data?.reply?.length || 0 });
       const botReply = data?.reply || data?.message || data?.content || (typeof data === 'string' ? data : "Não consegui gerar uma resposta. Tente novamente.");
       setMessages(prev => [...prev, { id: Date.now(), type: 'bot', text: botReply }]);
     } catch (error) {
-      console.error('[MonexAI] Erro no chat:', error);
+      logger.error('Erro no chat:', error);
       const fallbackResponse = "O serviço de IA está temporariamente indisponível. Verifique se a Edge Function 'smart-endpoint' está implantada corretamente no Supabase.";
       setMessages(prev => [...prev, { 
         id: Date.now(), 
@@ -124,15 +187,34 @@ const ChatInterface = ({ className, compact = false }) => {
       });
     } finally {
       setIsLoading(false);
+      if (activeRequestIdRef.current === requestId) {
+        activeRequestIdRef.current = 0;
+      }
     }
   };
 
   const handleSend = () => {
+    if (isLoading) return;
     if (!input.trim()) return;
-    
-    const userMessage = { id: Date.now(), type: 'user', text: input };
+
+    // Security validation
+    if (securityUtils.containsSuspiciousPatterns(input)) {
+      toast({
+        title: "Conteúdo suspeito detectado",
+        description: "Por favor, evite usar scripts ou conteúdo malicioso.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const sanitizedInput = securityUtils.sanitizeInput(input);
+    if (sanitizedInput !== input) {
+      logger.warn('Input sanitized', { originalLength: input.length, sanitizedLength: sanitizedInput.length });
+    }
+
+    const userMessage = { id: Date.now(), type: 'user', text: sanitizedInput };
     setMessages(prev => [...prev, userMessage]);
-    const query = input;
+    const query = sanitizedInput;
     setInput('');
     generateResponse(query);
   };
@@ -163,7 +245,12 @@ const ChatInterface = ({ className, compact = false }) => {
             variant="ghost" 
             size="icon" 
             className="text-slate-400 hover:text-white hover:bg-slate-800"
-            onClick={() => setMessages([{ id: Date.now(), type: 'bot', text: 'Conversa reiniciada. Como posso ajudar?' }])}
+            onClick={() => {
+              setMessages([{ id: Date.now(), type: 'bot', text: 'Conversa reiniciada. Como posso ajudar?' }]);
+              if (userId !== null) {
+                localStorage.removeItem(storageKey);
+              }
+            }}
             title="Reiniciar conversa"
         >
             <RefreshCw className="h-4 w-4" />

@@ -1,5 +1,6 @@
 
 import { supabase } from '@/lib/customSupabaseClient';
+import { logger } from '@/lib/logger';
 
 // This function ensures the master admin account exists in Supabase Auth.
 // The database trigger (handle_new_user) handles the profile creation with 'admin' role.
@@ -21,7 +22,7 @@ export const initializeAdmin = async () => {
         console.warn("Admin initialization warning:", error.message);
       }
     } else if (data?.user) {
-      console.log("Master Admin account verified/created.");
+      logger.info("Master Admin account verified/created.");
     }
   } catch (err) {
     console.warn("Admin init failed:", err);

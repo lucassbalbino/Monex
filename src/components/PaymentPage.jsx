@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from '@/lib/customSupabaseClient';
+import { logger } from '@/lib/logger';
 
 const PaymentPage = () => {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ const PaymentPage = () => {
     setLoading(true);
 
     try {
-      console.log('Initiating checkout for:', selectedPlan.name);
+      logger.info('Iniciando checkout', { planName: selectedPlan.name });
       // Prefer explicit stripe_price_id on plan, fall back to id
       let priceId = selectedPlan?.stripe_price_id || selectedPlan?.priceId || selectedPlan?.id;
 
@@ -75,7 +76,7 @@ const PaymentPage = () => {
             priceId = isProd
               ? planFromDb.stripe_price_id || planFromDb.id
               : planFromDb.stripe_price_id_test || planFromDb.stripe_price_id || planFromDb.id;
-            console.log('[PaymentPage] resolved priceId from DB:', priceId);
+            logger.info('PriceId resolvido do banco de dados', { priceId });
           }
         } catch (e) {
           console.warn('[PaymentPage] failed to resolve priceId from DB', e);
@@ -96,7 +97,7 @@ const PaymentPage = () => {
             priceId = isProd
               ? anyPlan.stripe_price_id || anyPlan.id
               : anyPlan.stripe_price_id_test || anyPlan.stripe_price_id || anyPlan.id;
-            console.log('[PaymentPage] fallback resolved priceId from anyPlan:', priceId);
+            logger.info('PriceId resolvido do fallback', { priceId });
           }
         } catch (e) {
           console.warn('[PaymentPage] failed to fetch fallback plan', e);
@@ -121,7 +122,7 @@ const PaymentPage = () => {
         origin: window.location.origin
       };
 
-      console.log('[PaymentPage] create-checkout-session payload:', payload);
+      logger.info('Payload para create-checkout-session', { payloadKeys: Object.keys(payload) });
 
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: payload

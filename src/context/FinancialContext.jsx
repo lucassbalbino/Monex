@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
+import { logger } from '@/lib/logger';
 
 const FinancialContext = createContext();
 
@@ -549,7 +550,7 @@ export function FinancialProvider({ children }) {
      });
    } else {
      // Sucesso opcional
-     console.log("Cartão salvo no Supabase com sucesso!");
+     logger.info("Cartão salvo no Supabase com sucesso");
      // toast({ title: "Cartão salvo no banco!", description: "OK" });
    }
  };

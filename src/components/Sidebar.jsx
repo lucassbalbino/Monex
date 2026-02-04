@@ -74,7 +74,7 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
             <button
               key={item.id}
               onClick={() => handleNavigation(item)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative ${
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative ${
                 isActive 
                   ? 'bg-[#14B8A6] text-white shadow-lg shadow-[#14B8A6]/20' 
                   : 'text-gray-400 hover:bg-[#334155] hover:text-white'
