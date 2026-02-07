@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Users, DollarSign, Activity, LogOut, Settings, Database } from 'lucide-react';
 import { Helmet } from 'react-helmet';
+import { logger } from '@/lib/logger';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ const AdminDashboard = () => {
       });
       
     } catch (error) {
-      console.error("Error fetching stats:", error);
+      logger.error("Error fetching stats:", error);
     } finally {
       setLoading(false);
     }

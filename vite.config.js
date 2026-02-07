@@ -184,8 +184,8 @@ logger.error = (msg, options) => {
 // Mudamos para uma função (({ mode })) para poder usar loadEnv
 // ---------------------------------------------------------
 export default defineConfig(({ mode }) => {
-	// 1. Carrega as variáveis do .env (Resolve o problema do process.env)
-	const env = loadEnv(mode, process.cwd(), '');
+	// Carrega apenas variaveis publicas (VITE_*)
+	const env = loadEnv(mode, process.cwd(), 'VITE_');
 	
 	const isDev = mode !== 'production'; // Ajustei para usar 'mode' que é mais seguro no Vite
 
@@ -193,47 +193,51 @@ export default defineConfig(({ mode }) => {
 	const addTransformIndexHtml = {
 		name: 'add-transform-index-html',
 		transformIndexHtml(html) {
-			const tags = [
-				{
-					tag: 'script',
-					attrs: { type: 'module' },
-					children: configHorizonsRuntimeErrorHandler,
-					injectTo: 'head',
-				},
-				{
-					tag: 'script',
-					attrs: { type: 'module' },
-					children: configHorizonsViteErrorHandler,
-					injectTo: 'head',
-				},
-				{
-					tag: 'script',
-					attrs: { type: 'module' },
-					children: configHorizonsConsoleErrroHandler,
-					injectTo: 'head',
-				},
-				{
-					tag: 'script',
-					attrs: { type: 'module' },
-					children: configWindowFetchMonkeyPatch,
-					injectTo: 'head',
-				},
-				{
-					tag: 'script',
-					attrs: { type: 'module' },
-					children: configNavigationHandler,
-					injectTo: 'head',
-				},
-			];
+			const tags = [];
+
+			if (isDev) {
+				tags.push(
+					{
+						tag: 'script',
+						attrs: { type: 'module' },
+						children: configHorizonsRuntimeErrorHandler,
+						injectTo: 'head',
+					},
+					{
+						tag: 'script',
+						attrs: { type: 'module' },
+						children: configHorizonsViteErrorHandler,
+						injectTo: 'head',
+					},
+					{
+						tag: 'script',
+						attrs: { type: 'module' },
+						children: configHorizonsConsoleErrroHandler,
+						injectTo: 'head',
+					},
+					{
+						tag: 'script',
+						attrs: { type: 'module' },
+						children: configWindowFetchMonkeyPatch,
+						injectTo: 'head',
+					},
+					{
+						tag: 'script',
+						attrs: { type: 'module' },
+						children: configNavigationHandler,
+						injectTo: 'head',
+					}
+				);
+			}
 
 			// Agora 'process.env' funciona aqui porque carregamos o 'env'
-			if (!isDev && env.TEMPLATE_BANNER_SCRIPT_URL && env.TEMPLATE_REDIRECT_URL) {
+			if (!isDev && env.VITE_TEMPLATE_BANNER_SCRIPT_URL && env.VITE_TEMPLATE_REDIRECT_URL) {
 				tags.push(
 					{
 						tag: 'script',
 						attrs: {
-							src: env.TEMPLATE_BANNER_SCRIPT_URL,
-							'template-redirect-url': env.TEMPLATE_REDIRECT_URL,
+							src: env.VITE_TEMPLATE_BANNER_SCRIPT_URL,
+							'template-redirect-url': env.VITE_TEMPLATE_REDIRECT_URL,
 						},
 						injectTo: 'head',
 					}
@@ -248,11 +252,6 @@ export default defineConfig(({ mode }) => {
 	};
 
 	return {
-		// 2. A MÁGICA: Define o process.env globalmente para o navegador
-		define: {
-			'process.env': env
-		},
-
 		customLogger: logger,
 		plugins: [
 			...(isDev ? [inlineEditPlugin(), editModeDevPlugin(), iframeRouteRestorationPlugin(), selectionModePlugin()] : []),

@@ -24,6 +24,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { logger } from '@/lib/logger';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -63,7 +64,7 @@ const LandingPage = () => {
         selected = { ...selected, id: resolvedPriceId };
       }
     } catch (e) {
-      console.warn('[LandingPage] failed to resolve plan from DB, falling back to provided values', e);
+      logger.warn('[LandingPage] failed to resolve plan from DB, falling back to provided values', e);
       if (!selected.id) selected.id = 'price_1SnT081SX0uvm0LewVODPSof';
     }
 

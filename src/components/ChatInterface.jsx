@@ -39,7 +39,7 @@ const ChatInterface = ({ className, compact = false }) => {
         const { data } = await supabase.auth.getSession();
         setUserId(data?.session?.user?.id || null);
       } catch (error) {
-        console.error('Error getting user session:', error);
+        logger.error('Error getting user session:', error);
         setUserId(null);
       }
     };
@@ -57,7 +57,7 @@ const ChatInterface = ({ className, compact = false }) => {
             setMessages(parsed);
           }
         } catch (error) {
-          console.error('Error parsing saved messages:', error);
+          logger.error('Error parsing saved messages:', error);
           // Fallback to default
         }
       }
@@ -165,7 +165,7 @@ const ChatInterface = ({ className, compact = false }) => {
 
       const { data, error } = await Promise.race([invokePromise, timeoutPromise]);
       if (error) {
-        console.error('[MonexAI] Supabase Function Error:', error);
+        logger.error('[MonexAI] Supabase Function Error:', error);
         fallbackUsed = true;
         throw error;
       }

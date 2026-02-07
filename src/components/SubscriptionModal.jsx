@@ -10,8 +10,9 @@ import { Loader2, Lock, ShieldCheck } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { logger } from '@/lib/logger';
 
-// Initialize Stripe outside component
-const stripePromise = loadStripe("pk_test_51SmEju1SX0uvm0LejFgXv1vZf6pfHAgcbxkXyyffAeBM8J7An5MdauhCO4XDnavp4259NSAXjucg0rQIJtFqMOMZ00qbMv2Pk3");
+// Initialize Stripe outside component using env var (VITE_STRIPE_PUBLIC_KEY preferred)
+const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || import.meta.env.STRIPE_PUBLIC_KEY || '';
+const stripePromise = loadStripe(stripePublicKey);
 
 export default function SubscriptionModal({ isOpen, onOpenChange, selectedPlan }) {
   const [loading, setLoading] = useState(false);
@@ -81,12 +82,12 @@ logger.info('Iniciando processo de assinatura');
       });
 
       if (error) {
-        console.error('[SubscriptionModal] Edge function error:', error);
+        logger.error('[SubscriptionModal] Edge function error:', error);
         throw error;
       }
       
       if (!data?.sessionId) {
-        console.error('[SubscriptionModal] No session ID returned:', data);
+        logger.error('[SubscriptionModal] No session ID returned:', data);
         throw new Error('Sessão inválida retornada');
       }
 
@@ -99,7 +100,7 @@ logger.info('Iniciando processo de assinatura');
       if (stripeError) throw stripeError;
 
     } catch (error) {
-      console.error('[SubscriptionModal] Checkout error:', error);
+      logger.error('[SubscriptionModal] Checkout error:', error);
       toast({
         title: "Erro no checkout",
         description: error.message || "Não foi possível iniciar o pagamento. Tente novamente.",

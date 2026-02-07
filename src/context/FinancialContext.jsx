@@ -23,7 +23,7 @@ export function FinancialProvider({ children }) {
      .select('*')
      .eq('user_id', data.user.id);
    if (fetchError) {
-     console.error(`Error fetching ${table} from Supabase`, fetchError);
+      logger.error(`Error fetching ${table} from Supabase`, fetchError);
      return;
    }
    if (remoteData && remoteData.length > 0) { setStateFn(remoteData);
@@ -41,7 +41,7 @@ export function FinancialProvider({ children }) {
       const saved = localStorage.getItem(key);
       return saved ? JSON.parse(saved) : defaultValue;
     } catch (e) {
-      console.error('Error loading from localStorage', e);
+      logger.error('Error loading from localStorage', e);
       return defaultValue;
     }
   };
@@ -54,7 +54,7 @@ export function FinancialProvider({ children }) {
       if (error) throw error;
       return data;
     } catch (e) {
-      console.error(`Error fetching ${table} from Supabase`, e);
+        logger.error(`Error fetching ${table} from Supabase`, e);
       return null;
     }
   }
@@ -139,7 +139,7 @@ export function FinancialProvider({ children }) {
         if (userError) {
            // Handle invalid token errors gracefully
            if (userError.status === 403 || userError.message?.toLowerCase().includes('jwt') || userError.message?.toLowerCase().includes('claim')) {
-             console.warn("Invalid session in FinancialContext. Signing out.");
+            logger.warn("Invalid session in FinancialContext. Signing out.");
              await supabase.auth.signOut();
              window.location.href = '/'; // Force redirect to home/login
              return;
@@ -166,7 +166,7 @@ export function FinancialProvider({ children }) {
            }
         }
       } catch (error) {
-        console.error("Error syncing profile:", error);
+        logger.error("Error syncing profile:", error);
       }
     };
     
@@ -339,7 +339,7 @@ export function FinancialProvider({ children }) {
   const addTransaction = async (transaction) => {
    const {data, error} = await supabase.auth.getUser();
    if (!data || !data.user) return; {
-     console.error("Usuário não autenticado. Transação só salva localmente.");
+         logger.error("Usuário não autenticado. Transação só salva localmente.");
    }
      const newTransaction = {
         ...transaction,
@@ -535,13 +535,13 @@ export function FinancialProvider({ children }) {
    localStorage.setItem('monex_credit_cards', JSON.stringify([...creditCards, newCard]));
    const {data, error} = await supabase.auth.getUser();
    if (!data || !data.user) {
-     console.error("Usuário não está autenticado! Cartão só salvo local.");
+        logger.error("Usuário não está autenticado! Cartão só salvo local.");
      return;
    }
    const { error: insertError } = await supabase.from('credit_cards').insert([{ ...newCard, user_id: data.user.id }]);
    if (insertError) {
      // Exibe no console e na UI
-     console.error("Erro ao inserir cartão no Supabase:", insertError);
+        logger.error("Erro ao inserir cartão no Supabase:", insertError);
      // Se você usa Toast no projeto:
      toast({
        title: "Erro ao salvar cartão no banco",
@@ -606,13 +606,13 @@ export function FinancialProvider({ children }) {
   };
 
   // --- Challenge Actions (Stubbed) ---
-  const addChallenge = (challenge) => { console.warn("Disabled"); };
+  const addChallenge = (challenge) => { logger.warn("Disabled"); };
 
-  const updateChallengeProgress = (id, type, amount) => { console.warn("Disabled"); };
+  const updateChallengeProgress = (id, type, amount) => { logger.warn("Disabled"); };
 
-  const modifyChallenge = (id, updates) => { console.warn("Disabled"); };
+  const modifyChallenge = (id, updates) => { logger.warn("Disabled"); };
 
-  const deleteChallenge = (id) => { console.warn("Disabled"); };
+  const deleteChallenge = (id) => { logger.warn("Disabled"); };
 
   const addSpendingLimit = async (limit) => {
     const { id, ...limitData } = limit;
@@ -652,7 +652,7 @@ export function FinancialProvider({ children }) {
          .eq('user_id', data.user.id);
      }
    } catch (e) {
-     console.error("Erro ao atualizar limite no Supabase:", e);
+     logger.error("Erro ao atualizar limite no Supabase:", e);
    }
  };
 

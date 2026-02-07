@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
-import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import Dashboard from '@/components/Dashboard';
@@ -16,15 +16,32 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { Toaster } from '@/components/ui/toaster';
 import { FinancialProvider } from '@/context/FinancialContext';
 import { supabase } from '@/lib/customSupabaseClient';
-import { initializeAdmin } from '@/lib/adminInit';
+import { logger } from '@/lib/logger';
 import { Loader2 } from 'lucide-react';
 
 
 function App() {
   const [session, setSession] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null); 
+  const [profileRole, setProfileRole] = useState(null);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [loading, setLoading] = useState(true);
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const prev = document.body.style.overflow;
+
+    if (isSidebarOpen && typeof window !== 'undefined' && window.innerWidth < 1024) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isSidebarOpen]);
   
   // Initialization
   useEffect(() => {
@@ -32,8 +49,6 @@ function App() {
 
     const initSession = async () => {
       try {
-        initializeAdmin();
-
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         if (mounted) {
@@ -43,10 +58,11 @@ function App() {
           } else {
             setSession(null);
             setSubscriptionStatus(null);
+            setProfileRole(null);
           }
         }
       } catch (err) {
-        console.error("Session init error:", err);
+        logger.error("Session init error:", err);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -60,6 +76,7 @@ function App() {
       if (event === 'SIGNED_OUT') {
         setSession(null);
         setSubscriptionStatus(null);
+        setProfileRole(null);
       } else if (newSession) {
         setSession(newSession);
         await fetchSubscriptionStatus(newSession.user.id);
@@ -76,13 +93,22 @@ function App() {
     try {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('subscription_status')
+        .select('subscription_status, role')
         .eq('id', userId)
         .single();
       
       setSubscriptionStatus(profile?.subscription_status);
+      setProfileRole(profile?.role ?? null);
     } catch (e) {
-      console.error("Error fetching status", e);
+      logger.error("Error fetching status", e);
+      setProfileRole(null);
+    }
+  };
+
+  const handleSectionChange = (sectionId) => {
+    setActiveSection(sectionId);
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setSidebarOpen(false);
     }
   };
 
@@ -94,7 +120,7 @@ function App() {
     );
   }
 
-  const isAdmin = session?.user?.email === 'admin@financialflow.com';
+  const isAdmin = profileRole === 'admin';
   // Check if user has a valid active subscription
   const hasActiveSubscription = isAdmin || subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
 
@@ -105,8 +131,8 @@ function App() {
       </Helmet>
       
       <Routes>
-        <Route path="/admin-login" element={<AdminLoginPage />} />
-        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin-login" element={isAdmin ? <Navigate to="/admin" replace /> : <AdminLoginPage />} />
+        <Route path="/admin" element={isAdmin ? <AdminDashboard /> : <Navigate to="/admin-login" replace />} />
         <Route path="/checkout-success" element={<CheckoutSuccessPage />} />
         
         {/* Payment Route: Available to logged in users */}
@@ -140,15 +166,25 @@ function App() {
              <LandingPage /> 
            ) : hasActiveSubscription ? (
             <FinancialProvider>
-              <div className="min-h-screen bg-[#0F172A] text-white">
-                <Header onShowLanding={() => {}} />
-                <div className="flex">
-                  <Sidebar activeSection={activeSection} setActiveSection={setActiveSection} />
-                  <main className="flex-1 p-6 ml-64">
-                    <Dashboard activeSection={activeSection} />
-                  </main>
+                <div className="min-h-screen bg-[#0F172A] text-white">
+                  <Sidebar 
+                    activeSection={activeSection} 
+                    setActiveSection={handleSectionChange} 
+                    isOpen={isSidebarOpen} 
+                    onClose={() => setSidebarOpen(false)}
+                  />
+
+                  <div className="lg:pl-64">
+                    <Header 
+                      onShowLanding={() => {}} 
+                      onToggleSidebar={() => setSidebarOpen(prev => !prev)}
+                      isSidebarOpen={isSidebarOpen}
+                    />
+                    <main className="p-4 sm:p-6">
+                      <Dashboard activeSection={activeSection} />
+                    </main>
+                  </div>
                 </div>
-              </div>
             </FinancialProvider>
            ) : (
              // Logged in but no subscription -> Redirect to payment

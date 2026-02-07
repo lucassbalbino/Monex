@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { ShieldAlert, Lock, Loader2, ArrowRight } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { Helmet } from 'react-helmet';
+import { logger } from '@/lib/logger';
 
 const AdminLoginPage = () => {
   const navigate = useNavigate();
@@ -60,7 +61,7 @@ const AdminLoginPage = () => {
         navigate('/admin');
       }
     } catch (error) {
-      console.error('Admin Login Error:', error);
+      logger.error('Admin Login Error:', error);
       toast({
         variant: "destructive",
         title: "Erro no login",

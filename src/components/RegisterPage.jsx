@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, ArrowRight, User, Mail, Phone, Lock, Shield, CreditCard } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { Helmet } from 'react-helmet';
+import { logger } from '@/lib/logger';
 
 const RegisterPage = () => {
   const location = useLocation();
@@ -129,7 +130,7 @@ const RegisterPage = () => {
       }
 
     } catch (error) {
-      console.error('Registration error:', error);
+      logger.error('Registration error:', error);
       toast({
         variant: "destructive",
         title: "Erro no cadastro",

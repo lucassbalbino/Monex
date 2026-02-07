@@ -6,6 +6,7 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { Loader2, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
+import { logger } from '@/lib/logger';
 
 const CheckoutSuccessPage = () => {
   const [searchParams] = useSearchParams();
@@ -34,7 +35,7 @@ const CheckoutSuccessPage = () => {
         });
 
         if (error) {
-          console.error('Edge Function Error:', error);
+          logger.error('Edge Function Error:', error);
           throw new Error('Falha na comunicação com o servidor de pagamentos.');
         }
         
@@ -75,7 +76,7 @@ const CheckoutSuccessPage = () => {
         }, 2500);
 
       } catch (err) {
-        console.error('Error verifying checkout:', err);
+        logger.error('Error verifying checkout:', err);
         setStatus('error');
         setErrorMessage(err.message || 'Falha ao verificar o pagamento. Entre em contato com o suporte.');
       }

@@ -12,12 +12,13 @@ import {
   Wallet,
   LogOut,
   CreditCard,
-  Rocket
+  Rocket,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
-const Sidebar = ({ activeSection, setActiveSection }) => {
+const Sidebar = ({ activeSection, setActiveSection, isOpen, onClose }) => {
   const navigate = useNavigate();
 
   const menuItems = [
@@ -45,58 +46,77 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
     } else {
       setActiveSection(item.id);
     }
+    if (onClose) onClose();
   };
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 bg-[#1E293B] border-r border-[#334155] flex flex-col z-50">
-      {/* Logo Area */}
-      <div className="p-6 border-b border-[#334155]">
-        <div className="flex items-center gap-2">
-           <img 
-            src="https://horizons-cdn.hostinger.com/26fb3ff4-2941-4291-a8b9-2757b63ade4c/4d34c56b0a0a4f437b2e1b698d3b5297.jpg" 
-            alt="Logo Monex" 
-            className="h-8 w-auto"
-          />
-          <span className="text-2xl font-bold text-white tracking-tight">Monex</span>
+    <>
+      {/* Mobile overlay */}
+      <div 
+        className={`fixed inset-0 bg-black/40 backdrop-blur-[1px] transition-opacity duration-200 md:hidden ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} 
+        onClick={onClose}
+      />
+
+      <div className={`fixed left-0 top-0 h-full w-[80vw] max-w-xs md:max-w-none md:w-64 bg-[#1E293B] border-r border-[#334155] flex flex-col z-50 transition-transform duration-200 ease-out ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+        {/* Logo Area */}
+        <div className="p-6 border-b border-[#334155] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <img 
+              src="https://horizons-cdn.hostinger.com/26fb3ff4-2941-4291-a8b9-2757b63ade4c/4d34c56b0a0a4f437b2e1b698d3b5297.jpg" 
+              alt="Logo Monex" 
+              className="h-8 w-auto"
+            />
+            <span className="text-2xl font-bold text-white tracking-tight">Monex</span>
+          </div>
+
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onClose}
+            className="md:hidden text-gray-400 hover:text-white hover:bg-[#334155]"
+            aria-label="Fechar menu"
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-        <p className="text-xs text-gray-500 mt-1 ml-1">Seu Assistente Financeiro</p>
-      </div>
+        <p className="text-xs text-gray-500 mt-1 ml-7 md:ml-6">Seu Assistente Financeiro</p>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeSection === item.id;
-          const isDev = item.status === 'dev';
-          const isLink = item.isLink;
 
-          return (
-            <button
-              key={item.id}
-              onClick={() => handleNavigation(item)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative ${
-                isActive 
-                  ? 'bg-[#14B8A6] text-white shadow-lg shadow-[#14B8A6]/20' 
-                  : 'text-gray-400 hover:bg-[#334155] hover:text-white'
-              } ${isDev && !isActive ? 'opacity-70' : ''}`}
-            >
-              <Icon className={`h-5 w-5 ${isActive ? 'text-white' : (isLink ? 'text-[#14B8A6]' : (isDev ? 'text-gray-500' : 'text-gray-400 group-hover:text-white'))}`} />
-              <span className={`font-medium text-sm text-left flex-1 ${isLink ? 'text-[#14B8A6]' : ''}`}>{item.label}</span>
-              
-              {/* Optional Badges */}
-              {isDev && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
+          {menuItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeSection === item.id;
+            const isDev = item.status === 'dev';
+            const isLink = item.isLink;
+
+            return (
+              <button
+                key={item.id}
+                onClick={() => handleNavigation(item)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group relative ${
                   isActive 
-                    ? 'bg-white/20 border-white/30 text-white' 
-                    : 'bg-[#0F172A] border-[#475569] text-gray-500'
-                }`}>
-                  DEV
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
+                    ? 'bg-[#14B8A6] text-white shadow-lg shadow-[#14B8A6]/20' 
+                    : 'text-gray-400 hover:bg-[#334155] hover:text-white'
+                } ${isDev && !isActive ? 'opacity-70' : ''}`}
+              >
+                <Icon className={`h-5 w-5 ${isActive ? 'text-white' : (isLink ? 'text-[#14B8A6]' : (isDev ? 'text-gray-500' : 'text-gray-400 group-hover:text-white'))}`} />
+                <span className={`font-medium text-sm text-left flex-1 ${isLink ? 'text-[#14B8A6]' : ''}`}>{item.label}</span>
+                
+                {/* Optional Badges */}
+                {isDev && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                    isActive 
+                      ? 'bg-white/20 border-white/30 text-white' 
+                      : 'bg-[#0F172A] border-[#475569] text-gray-500'
+                  }`}>
+                    DEV
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
 
       {/* Footer / User Profile Stub - HIDDEN as per request */}
       {/* 
@@ -113,7 +133,8 @@ const Sidebar = ({ activeSection, setActiveSection }) => {
         </div>
       </div> 
       */}
-    </div>
+      </div>
+    </>
   );
 };
 

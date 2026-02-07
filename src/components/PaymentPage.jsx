@@ -35,7 +35,7 @@ const PaymentPage = () => {
         try {
           plan = JSON.parse(stored);
         } catch (e) {
-          console.error("Failed to parse stored plan", e);
+          logger.error("Failed to parse stored plan", e);
         }
       }
     }
@@ -79,7 +79,7 @@ const PaymentPage = () => {
             logger.info('PriceId resolvido do banco de dados', { priceId });
           }
         } catch (e) {
-          console.warn('[PaymentPage] failed to resolve priceId from DB', e);
+          logger.warn('[PaymentPage] failed to resolve priceId from DB', e);
         }
       }
 
@@ -100,7 +100,7 @@ const PaymentPage = () => {
             logger.info('PriceId resolvido do fallback', { priceId });
           }
         } catch (e) {
-          console.warn('[PaymentPage] failed to fetch fallback plan', e);
+          logger.warn('[PaymentPage] failed to fetch fallback plan', e);
         }
       }
 
@@ -129,9 +129,9 @@ const PaymentPage = () => {
       });
 
       if (error) {
-        console.error('Edge function error:', error);
+        logger.error('Edge function error:', error);
         // log any returned data for diagnostics
-        console.error('Edge function returned data:', data);
+        logger.error('Edge function returned data:', data);
         throw error;
       }
       
@@ -144,7 +144,8 @@ const PaymentPage = () => {
 
       // If backend returned only a sessionId, use Stripe.js to redirect
       if (data?.sessionId) {
-        const stripe = await loadStripe("pk_test_51SmEju1SX0uvm0LejFgXv1vZf6pfHAgcbxkXyyffAeBM8J7An5MdauhCO4XDnavp4259NSAXjucg0rQIJtFqMOMZ00qbMv2Pk3");
+        const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || import.meta.env.STRIPE_PUBLIC_KEY || '';
+        const stripe = await loadStripe(stripePublicKey);
         const { error: stripeError } = await stripe.redirectToCheckout({ sessionId: data.sessionId });
         if (stripeError) throw stripeError;
         return;
@@ -153,7 +154,7 @@ const PaymentPage = () => {
       throw new Error('URL de pagamento não encontrada.');
 
     } catch (error) {
-      console.error('Checkout error:', error);
+      logger.error('Checkout error:', error);
       toast({
         variant: "destructive",
         title: "Erro ao iniciar pagamento",

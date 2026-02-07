@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, User, Ticket, Settings, LogOut, Loader2 } from 'lucide-react';
+import { Bell, User, Ticket, Settings, LogOut, Loader2, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useFinancialData } from '@/context/FinancialContext';
@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/lib/customSupabaseClient';
 
-const Header = ({ onShowLanding }) => {
+const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
   const { toast } = useToast();
   const { userProfile, creditCards, debts, updateUserProfile } = useFinancialData();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
@@ -40,8 +40,8 @@ const Header = ({ onShowLanding }) => {
 
   const [notifications, setNotifications] = useState([]);
 
-  // STRICT ADMIN CHECK: Only exact match for admin@financialflow.com
-  const isAdmin = userProfile?.email === 'admin@financialflow.com';
+  // Admin check based on role from profiles
+  const isAdmin = userProfile?.role === 'admin';
 
   // --- Notification Logic ---
   useEffect(() => {
@@ -158,22 +158,34 @@ const Header = ({ onShowLanding }) => {
   };
 
   return (
-    <header className="bg-[#1E293B] border-b border-[#334155] px-6 py-4 sticky top-0 z-40 shadow-sm">
-      <div className="flex items-center justify-between">
-        <motion.div 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex items-center gap-3 cursor-pointer"
-          onClick={() => window.location.href = '/'}
-        >
-          <img 
-            src="https://horizons-cdn.hostinger.com/26fb3ff4-2941-4291-a8b9-2757b63ade4c/4d34c56b0a0a4f437b2e1b698d3b5297.jpg" 
-            alt="Logo Monex" 
-            className="h-10 w-auto"
-          />
-          <span className="text-2xl font-bold text-[#14B8A6]">Monex</span>
-        </motion.div>
+    <header className="bg-[#1E293B] border-b border-[#334155] px-4 sm:px-6 py-4 sticky top-0 z-50 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            className="md:hidden text-gray-200 hover:bg-[#334155]" 
+            onClick={onToggleSidebar}
+            aria-label="Abrir menu"
+          >
+            {isSidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => window.location.href = '/'}
+          >
+            <img 
+              src="https://horizons-cdn.hostinger.com/26fb3ff4-2941-4291-a8b9-2757b63ade4c/4d34c56b0a0a4f437b2e1b698d3b5297.jpg" 
+              alt="Logo Monex" 
+              className="h-10 w-auto"
+            />
+            <span className="text-2xl font-bold text-[#14B8A6]">Monex</span>
+          </motion.div>
+        </div>
         
         <motion.div 
           initial={{ opacity: 0, x: 20 }}

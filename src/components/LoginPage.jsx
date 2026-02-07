@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { LogIn, Lock, Loader2, ArrowRight, Mail, AlertCircle } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { Helmet } from 'react-helmet';
+import { logger } from '@/lib/logger';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -71,7 +72,7 @@ const LoginPage = () => {
         navigate('/');
       }
     } catch (error) {
-      console.error('Login Error:', error);
+      logger.error('Login Error:', error);
       toast({
         variant: "destructive",
         title: "Erro no acesso",
