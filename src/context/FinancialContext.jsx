@@ -15,15 +15,6 @@ export function useFinancialData() {
 }
 
 export function FinancialProvider({ children }) {
-  // Debug: detecta loops
-  const renderCountRef = useRef(0);
-  renderCountRef.current++;
-  if (renderCountRef.current > 50) {
-    console.error("[LOOP] FinancialProvider renderizou", renderCountRef.current, "vezes!");
-    return <div className="p-4 bg-red-900 text-white">Loop detectado no FinancialProvider</div>;
-  }
-  console.log("[FinancialProvider] Render #" + renderCountRef.current);
-  
   // Ref para controlar inicialização e prevenir loops
   const initRef = useRef(false);
   const syncRef = useRef(false);
