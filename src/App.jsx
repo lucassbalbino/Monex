@@ -27,6 +27,7 @@ function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({ step: 'iniciando', error: null });
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -43,91 +44,68 @@ function App() {
     };
   }, [isSidebarOpen]);
   
-  // Initialization
+  // Initialization - SIMPLIFICADO para evitar loops em produção
   useEffect(() => {
     let mounted = true;
-    let isInitialized = false;
+    let authListener = null;
+    
+    // Timeout de segurança - se demorar mais de 10s, para de carregar
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.error("[Auth] TIMEOUT - forçando fim do loading");
+        setDebugInfo(prev => ({ ...prev, step: 'TIMEOUT após 10s', error: 'Timeout' }));
+        setLoading(false);
+      }
+    }, 10000);
 
-    const initSession = async () => {
-      logger.info("[Auth] Iniciando verificação de sessão...");
-      
-      // Debug: verificar o que está no localStorage
-      const storedSession = localStorage.getItem('sb-' + import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0] + '-auth-token');
-      logger.info("[Auth] Token no localStorage:", storedSession ? "Existe" : "Não existe");
+    const initAuth = async () => {
+      console.log("[Auth] Iniciando...");
+      setDebugInfo({ step: 'Conectando ao Supabase...', error: null });
       
       try {
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          logger.error("[Auth] Erro ao obter sessão:", error);
-          // Limpa sessão corrompida
-          await supabase.auth.signOut();
-          if (mounted) {
-            setSession(null);
-            setSubscriptionStatus(null);
-            setProfileRole(null);
-            setLoading(false);
-          }
+        // Verifica se as variáveis estão configuradas
+        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+          console.error("[Auth] VARIÁVEIS DE AMBIENTE NÃO CONFIGURADAS!");
+          setDebugInfo({ step: 'ERRO: Variáveis não configuradas', error: 'ENV_MISSING' });
+          setLoading(false);
           return;
         }
         
-        // Verifica se a sessão está expirada
-        if (currentSession) {
-          const expiresAt = currentSession.expires_at;
-          const now = Math.floor(Date.now() / 1000);
-          const isExpired = expiresAt && expiresAt < now;
-          
-          logger.info("[Auth] Sessão encontrada - expira em:", expiresAt ? new Date(expiresAt * 1000).toLocaleString() : "N/A");
-          logger.info("[Auth] Sessão expirada?", isExpired);
-          
-          if (isExpired) {
-            logger.warn("[Auth] Sessão expirada, tentando refresh...");
-            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-            
-            if (refreshError || !refreshData.session) {
-              logger.error("[Auth] Falha ao renovar sessão:", refreshError);
-              await supabase.auth.signOut();
-              if (mounted) {
-                setSession(null);
-                setSubscriptionStatus(null);
-                setProfileRole(null);
-                setLoading(false);
-              }
-              return;
-            }
-            
-            logger.info("[Auth] Sessão renovada com sucesso");
-            if (mounted) {
-              setSession(refreshData.session);
-              await fetchSubscriptionStatus(refreshData.session.user.id);
-              isInitialized = true;
-              setLoading(false);
-            }
-            return;
-          }
+        setDebugInfo({ step: 'Buscando sessão...', error: null });
+        
+        // Passo 1: Obter sessão atual
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+        
+        if (error) {
+          console.error("[Auth] Erro getSession:", error.message);
+          setDebugInfo({ step: 'Erro ao buscar sessão', error: error.message });
+          setSession(null);
+          setSubscriptionStatus(null);
+          setProfileRole(null);
+          setLoading(false);
+          return;
         }
         
-        logger.info("[Auth] Sessão obtida:", currentSession ? "Usuário logado" : "Sem sessão");
+        const currentSession = data?.session;
+        console.log("[Auth] Sessão:", currentSession ? "existe" : "null");
+        setDebugInfo({ step: currentSession ? 'Sessão encontrada' : 'Sem sessão', error: null });
         
-        if (mounted) {
-          if (currentSession) {
-            setSession(currentSession);
-            await fetchSubscriptionStatus(currentSession.user.id);
-          } else {
-            setSession(null);
-            setSubscriptionStatus(null);
-            setProfileRole(null);
-          }
-          isInitialized = true;
+        if (currentSession?.user?.id) {
+          setSession(currentSession);
+          setDebugInfo({ step: 'Buscando perfil...', error: null });
+          // Busca perfil em paralelo
+          fetchSubscriptionStatus(currentSession.user.id);
+        } else {
+          setSession(null);
+          setSubscriptionStatus(null);
+          setProfileRole(null);
         }
+        
       } catch (err) {
-        logger.error("[Auth] Session init error:", err);
-        // Em caso de erro, limpa tudo para evitar loop
-        try {
-          await supabase.auth.signOut();
-        } catch (e) {
-          // ignora erro de signOut
-        }
+        console.error("[Auth] Erro init:", err);
+        setDebugInfo({ step: 'Erro na inicialização', error: err.message });
         if (mounted) {
           setSession(null);
           setSubscriptionStatus(null);
@@ -136,51 +114,49 @@ function App() {
       } finally {
         if (mounted) {
           setLoading(false);
-          logger.info("[Auth] Loading finalizado");
+          setDebugInfo(prev => ({ ...prev, step: prev.error ? prev.step : 'Concluído' }));
+          console.log("[Auth] Loading = false");
         }
       }
     };
 
-    initSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      logger.info("[Auth] onAuthStateChange:", event, newSession ? "com sessão" : "sem sessão");
+    // Configura listener ANTES de inicializar
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      console.log("[Auth] Evento:", event);
       
       if (!mounted) return;
       
-      // Evita processar eventos durante a inicialização
-      if (!isInitialized && event === 'INITIAL_SESSION') {
-        logger.info("[Auth] Ignorando INITIAL_SESSION - já processado por initSession");
-        return;
-      }
+      // Ignora INITIAL_SESSION pois já processamos no initAuth
+      if (event === 'INITIAL_SESSION') return;
       
-      // Se o token foi renovado automaticamente, apenas atualiza
-      if (event === 'TOKEN_REFRESHED') {
-        logger.info("[Auth] Token renovado automaticamente");
-        if (newSession) {
-          setSession(newSession);
-        }
-        return;
-      }
-
       if (event === 'SIGNED_OUT') {
         setSession(null);
         setSubscriptionStatus(null);
         setProfileRole(null);
-      } else if (event === 'SIGNED_IN' && newSession) {
-        setSession(newSession);
-        await fetchSubscriptionStatus(newSession.user.id);
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (newSession?.user?.id) {
+          setSession(newSession);
+          fetchSubscriptionStatus(newSession.user.id);
+        }
       }
     });
+    
+    authListener = subscription;
+    
+    // Inicia verificação de sessão
+    initAuth();
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      clearTimeout(timeout);
+      if (authListener) {
+        authListener.unsubscribe();
+      }
     };
   }, []);
 
   const fetchSubscriptionStatus = async (userId) => {
-    logger.info("[Auth] Buscando status da assinatura para userId:", userId);
+    console.log("[Auth] Buscando perfil para:", userId);
     
     try {
       const { data: profile, error } = await supabase
@@ -190,19 +166,18 @@ function App() {
         .single();
       
       if (error) {
-        logger.error("[Auth] Erro ao buscar perfil:", error);
-        // Se o perfil não existir, permite acesso mas sem subscription ativa
+        console.warn("[Auth] Erro ao buscar perfil:", error.message);
         setSubscriptionStatus(null);
         setProfileRole(null);
         return;
       }
       
-      logger.info("[Auth] Perfil encontrado - status:", profile?.subscription_status, "role:", profile?.role);
+      console.log("[Auth] Perfil:", profile?.subscription_status, profile?.role);
       
       setSubscriptionStatus(profile?.subscription_status ?? null);
       setProfileRole(profile?.role ?? null);
     } catch (e) {
-      logger.error("[Auth] Error fetching status:", e);
+      console.error("[Auth] Erro:", e);
       setSubscriptionStatus(null);
       setProfileRole(null);
     }
@@ -217,8 +192,33 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0F172A] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0F172A] flex flex-col items-center justify-center gap-4">
         <Loader2 className="h-10 w-10 text-[#14B8A6] animate-spin" />
+        {/* Debug info - REMOVER DEPOIS DE RESOLVER O PROBLEMA */}
+        <div className="text-xs text-gray-400 text-center max-w-md p-4 bg-[#1E293B] rounded-lg border border-gray-700">
+          <p className="font-semibold text-white mb-2">Debug de Autenticação</p>
+          <p className="mb-1">
+            Status: <span className="text-[#14B8A6]">{debugInfo.step}</span>
+          </p>
+          {debugInfo.error && (
+            <p className="text-red-400 mb-1">Erro: {debugInfo.error}</p>
+          )}
+          <hr className="border-gray-600 my-2" />
+          <p>
+            VITE_SUPABASE_URL: {import.meta.env.VITE_SUPABASE_URL ? 
+              <span className="text-green-400">✓ Configurada</span> : 
+              <span className="text-red-400">✗ NÃO CONFIGURADA</span>}
+          </p>
+          <p>
+            VITE_SUPABASE_ANON_KEY: {import.meta.env.VITE_SUPABASE_ANON_KEY ? 
+              <span className="text-green-400">✓ Configurada</span> : 
+              <span className="text-red-400">✗ NÃO CONFIGURADA</span>}
+          </p>
+          <hr className="border-gray-600 my-2" />
+          <p className="text-gray-500 text-[10px]">
+            Se este painel ficar visível por mais de 5 segundos, há um problema.
+          </p>
+        </div>
       </div>
     );
   }
