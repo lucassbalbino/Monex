@@ -104,26 +104,43 @@ const RegisterPage = () => {
 
       if (data.user) {
         // 2. Profile Creation
+        // Check if coming from a completed Stripe checkout (payment already verified)
+        const hasVerifiedPayment = stateData.stripeCustomerId && stateData.subscriptionId;
+        
         const updates = {
           id: data.user.id,
           email: formData.email,
           full_name: formData.fullName,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          // If payment was already verified via CheckoutSuccessPage, activate subscription
+          ...(hasVerifiedPayment && {
+            subscription_status: 'active'
+          })
         };
 
         await supabase.from('profiles').upsert(updates);
 
-        toast({
-          title: "Conta criada com sucesso!",
-          description: "Redirecionando para o pagamento...",
-          className: "bg-green-600 text-white border-none",
-        });
-        
-        // 3. FORCE REDIRECT TO PAYMENT
-        // We use window.location as a fallback to ensure we break out of any router state traps
-        // but prefer navigate for SPA feel. Since App.jsx might redirect to /, we trust App.jsx
-        // to eventually route to /payment if subscription is missing, but let's be explicit.
-        navigate('/payment');
+        if (hasVerifiedPayment) {
+          toast({
+            title: "Conta criada com sucesso!",
+            description: "Sua assinatura já está ativa. Bem-vindo ao Monex!",
+            className: "bg-green-600 text-white border-none",
+          });
+          // Payment already done, go directly to dashboard
+          navigate('/');
+        } else {
+          toast({
+            title: "Conta criada com sucesso!",
+            description: "Redirecionando para o pagamento...",
+            className: "bg-green-600 text-white border-none",
+          });
+          
+          // 3. FORCE REDIRECT TO PAYMENT
+          // We use window.location as a fallback to ensure we break out of any router state traps
+          // but prefer navigate for SPA feel. Since App.jsx might redirect to /, we trust App.jsx
+          // to eventually route to /payment if subscription is missing, but let's be explicit.
+          navigate('/payment');
+        }
 
       } else {
         toast({ title: "Verifique seu email", description: "Confirmação enviada." });

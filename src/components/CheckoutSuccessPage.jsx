@@ -50,9 +50,18 @@ const CheckoutSuccessPage = () => {
 
         // 3. Intelligent Redirection logic
         // We give the user a moment to see the success checkmark
-        setTimeout(() => {
+        setTimeout(async () => {
           if (authSession) {
-            // CASE A: User was already logged in
+            // CASE A: User was already logged in - update subscription status in database
+            try {
+              await supabase
+                .from('profiles')
+                .update({ subscription_status: 'active', updated_at: new Date().toISOString() })
+                .eq('id', authSession.user.id);
+            } catch (updateError) {
+              logger.error('Error updating subscription status:', updateError);
+            }
+            
             toast({
               title: "Assinatura Confirmada!",
               description: "Seu plano foi ativado com sucesso.",
