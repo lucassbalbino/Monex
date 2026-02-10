@@ -132,37 +132,32 @@ export function FinancialProvider({ children }) {
 
   // --- Sync Profile with Supabase ---
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchProfile = async () => {
       try {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError) {
-           // Handle invalid token errors gracefully
-           if (userError.status === 403 || userError.message?.toLowerCase().includes('jwt') || userError.message?.toLowerCase().includes('claim')) {
-            logger.warn("Invalid session in FinancialContext. Signing out.");
-             await supabase.auth.signOut();
-             window.location.href = '/'; // Force redirect to home/login
-             return;
-           }
-           throw userError;
+           // Apenas loga o erro - deixa o App.jsx lidar com autenticação
+           logger.warn("FinancialContext: Erro ao obter usuário:", userError.message);
+           return;
         }
 
-        if (user) {
+        if (user && isMounted) {
            const { data: profile, error } = await supabase
              .from('profiles')
              .select('*')
              .eq('id', user.id)
              .single();
            
-           if (profile && !error) {
+           if (profile && !error && isMounted) {
              setUserProfile(prev => ({
                ...prev,
-               ...profile, // Merge DB profile into local state
+               ...profile,
                name: profile.full_name || prev?.name,
                isSubscribed: profile.subscription_status === 'active' || profile.subscription_status === 'trialing'
-             }
-            
-            ));
+             }));
            }
         }
       } catch (error) {
@@ -171,21 +166,40 @@ export function FinancialProvider({ children }) {
     };
     
     fetchProfile();
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
+  
   useEffect(() => {
+    let isMounted = true;
+    
     const syncAllData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user || !isMounted) return;
 
-      await syncTable('transactions', 'monex_transactions', setTransactions, loadFromStorage('monex_transactions', []));
-      await syncTable('goals', 'monex_goals', setGoals, loadFromStorage('monex_goals', []));
-      await syncTable('debts', 'monex_debts', setDebts, loadFromStorage('monex_debts', []));
-      await syncTable('credit_cards', 'monex_credit_cards', setCreditCards, loadFromStorage('monex_credit_cards', []));
-      await syncTable('spending_limits', 'monex_limits', setSpendingLimits, loadFromStorage('monex_limits', []));
+        await syncTable('transactions', 'monex_transactions', setTransactions, loadFromStorage('monex_transactions', []));
+        if (!isMounted) return;
+        await syncTable('goals', 'monex_goals', setGoals, loadFromStorage('monex_goals', []));
+        if (!isMounted) return;
+        await syncTable('debts', 'monex_debts', setDebts, loadFromStorage('monex_debts', []));
+        if (!isMounted) return;
+        await syncTable('credit_cards', 'monex_credit_cards', setCreditCards, loadFromStorage('monex_credit_cards', []));
+        if (!isMounted) return;
+        await syncTable('spending_limits', 'monex_limits', setSpendingLimits, loadFromStorage('monex_limits', []));
+      } catch (err) {
+        logger.error("Error syncing data:", err);
+      }
     };
 
     syncAllData();
-  }, [userProfile]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Removido userProfile para evitar loop
   
   const defaultLimits = [
     { name: 'Compras de Mercado', category: 'Mercado', limit: 800, spent: 0, period: 'Mensal', color: '#14B8A6', lastResetMonth: new Date().getMonth() },
