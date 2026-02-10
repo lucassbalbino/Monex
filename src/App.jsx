@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -19,8 +19,33 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { logger } from '@/lib/logger';
 import { Loader2 } from 'lucide-react';
 
+// Contador de renderização para debug
+let renderCount = 0;
 
 function App() {
+  // Debug: conta renderizações
+  renderCount++;
+  if (renderCount > 50) {
+    console.error("[LOOP DETECTADO] App renderizou", renderCount, "vezes!");
+    // Força parada para evitar crash
+    return (
+      <div className="min-h-screen bg-red-900 flex items-center justify-center p-8">
+        <div className="text-white text-center">
+          <h1 className="text-2xl font-bold mb-4">⚠️ Loop de Renderização Detectado</h1>
+          <p>O App renderizou mais de 50 vezes.</p>
+          <p className="mt-2 text-sm">Abra o console (F12) para mais detalhes.</p>
+          <button 
+            onClick={() => { localStorage.clear(); window.location.reload(); }}
+            className="mt-4 px-4 py-2 bg-white text-red-900 rounded"
+          >
+            Limpar Cache e Recarregar
+          </button>
+        </div>
+      </div>
+    );
+  }
+  console.log("[App] Render #" + renderCount);
+  
   const [session, setSession] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null); 
   const [profileRole, setProfileRole] = useState(null);
@@ -28,6 +53,9 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [debugInfo, setDebugInfo] = useState({ step: 'iniciando', error: null });
+  
+  // Ref para prevenir múltiplas inicializações
+  const initRef = useRef(false);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -44,144 +72,135 @@ function App() {
     };
   }, [isSidebarOpen]);
   
-  // Initialization - SIMPLIFICADO para evitar loops em produção
+  // Initialization - TOTALMENTE REESCRITO
   useEffect(() => {
-    let mounted = true;
-    let authListener = null;
+    // Previne múltiplas execuções
+    if (initRef.current) return;
+    initRef.current = true;
     
-    // Timeout de segurança - se demorar mais de 10s, para de carregar
-    const timeout = setTimeout(() => {
-      if (mounted && loading) {
-        console.error("[Auth] TIMEOUT - forçando fim do loading");
-        setDebugInfo(prev => ({ ...prev, step: 'TIMEOUT após 10s', error: 'Timeout' }));
-        setLoading(false);
-      }
-    }, 10000);
+    console.log("[App] useEffect de auth iniciado");
+    
+    let mounted = true;
 
-    const initAuth = async () => {
-      console.log("[Auth] Iniciando...");
-      setDebugInfo({ step: 'Conectando ao Supabase...', error: null });
-      
+    const init = async () => {
       try {
-        // Verifica se as variáveis estão configuradas
-        if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-          console.error("[Auth] VARIÁVEIS DE AMBIENTE NÃO CONFIGURADAS!");
-          setDebugInfo({ step: 'ERRO: Variáveis não configuradas', error: 'ENV_MISSING' });
+        setDebugInfo({ step: 'Verificando variáveis...', error: null });
+        
+        // Verifica variáveis de ambiente
+        const url = import.meta.env.VITE_SUPABASE_URL;
+        const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        console.log("[App] ENV URL:", !!url);
+        console.log("[App] ENV Key:", !!key);
+        
+        if (!url || !key) {
+          console.error("[App] Variáveis de ambiente faltando!");
+          setDebugInfo({ step: 'Erro: variáveis não configuradas', error: 'ENV_MISSING' });
           setLoading(false);
           return;
         }
         
         setDebugInfo({ step: 'Buscando sessão...', error: null });
+        console.log("[App] Chamando getSession...");
         
-        // Passo 1: Obter sessão atual
         const { data, error } = await supabase.auth.getSession();
         
-        if (!mounted) return;
+        console.log("[App] getSession retornou:", { hasSession: !!data?.session, error: error?.message });
+        
+        if (!mounted) {
+          console.log("[App] Componente desmontado, abortando");
+          return;
+        }
         
         if (error) {
-          console.error("[Auth] Erro getSession:", error.message);
+          console.error("[App] Erro:", error.message);
           setDebugInfo({ step: 'Erro ao buscar sessão', error: error.message });
           setSession(null);
-          setSubscriptionStatus(null);
-          setProfileRole(null);
           setLoading(false);
           return;
         }
         
         const currentSession = data?.session;
-        console.log("[Auth] Sessão:", currentSession ? "existe" : "null");
-        setDebugInfo({ step: currentSession ? 'Sessão encontrada' : 'Sem sessão', error: null });
         
         if (currentSession?.user?.id) {
+          console.log("[App] Sessão encontrada, buscando perfil...");
           setSession(currentSession);
           setDebugInfo({ step: 'Buscando perfil...', error: null });
-          // Busca perfil em paralelo
-          fetchSubscriptionStatus(currentSession.user.id);
+          
+          // Busca perfil
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('subscription_status, role')
+            .eq('id', currentSession.user.id)
+            .single();
+          
+          if (!mounted) return;
+          
+          if (profileError) {
+            console.warn("[App] Erro ao buscar perfil:", profileError.message);
+          }
+          
+          console.log("[App] Perfil:", profile);
+          setSubscriptionStatus(profile?.subscription_status ?? null);
+          setProfileRole(profile?.role ?? null);
         } else {
+          console.log("[App] Sem sessão ativa");
           setSession(null);
           setSubscriptionStatus(null);
           setProfileRole(null);
         }
         
+        setDebugInfo({ step: 'Concluído', error: null });
+        
       } catch (err) {
-        console.error("[Auth] Erro init:", err);
-        setDebugInfo({ step: 'Erro na inicialização', error: err.message });
+        console.error("[App] Erro crítico:", err);
+        setDebugInfo({ step: 'Erro crítico', error: err.message });
         if (mounted) {
           setSession(null);
-          setSubscriptionStatus(null);
-          setProfileRole(null);
         }
       } finally {
         if (mounted) {
+          console.log("[App] Finalizando loading");
           setLoading(false);
-          setDebugInfo(prev => ({ ...prev, step: prev.error ? prev.step : 'Concluído' }));
-          console.log("[Auth] Loading = false");
         }
       }
     };
 
-    // Configura listener ANTES de inicializar
+    init();
+
+    // Listener de auth - simplificado
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log("[Auth] Evento:", event);
+      console.log("[App] Auth event:", event);
       
       if (!mounted) return;
-      
-      // Ignora INITIAL_SESSION pois já processamos no initAuth
-      if (event === 'INITIAL_SESSION') return;
+      if (event === 'INITIAL_SESSION') return; // Já processado
       
       if (event === 'SIGNED_OUT') {
         setSession(null);
         setSubscriptionStatus(null);
         setProfileRole(null);
-      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (newSession?.user?.id) {
-          setSession(newSession);
-          fetchSubscriptionStatus(newSession.user.id);
-        }
+      } else if (event === 'SIGNED_IN' && newSession?.user?.id) {
+        setSession(newSession);
+        // Busca perfil assíncrona sem await para não bloquear
+        supabase
+          .from('profiles')
+          .select('subscription_status, role')
+          .eq('id', newSession.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            if (mounted) {
+              setSubscriptionStatus(profile?.subscription_status ?? null);
+              setProfileRole(profile?.role ?? null);
+            }
+          });
       }
     });
-    
-    authListener = subscription;
-    
-    // Inicia verificação de sessão
-    initAuth();
 
     return () => {
       mounted = false;
-      clearTimeout(timeout);
-      if (authListener) {
-        authListener.unsubscribe();
-      }
+      subscription.unsubscribe();
     };
   }, []);
-
-  const fetchSubscriptionStatus = async (userId) => {
-    console.log("[Auth] Buscando perfil para:", userId);
-    
-    try {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('subscription_status, role')
-        .eq('id', userId)
-        .single();
-      
-      if (error) {
-        console.warn("[Auth] Erro ao buscar perfil:", error.message);
-        setSubscriptionStatus(null);
-        setProfileRole(null);
-        return;
-      }
-      
-      console.log("[Auth] Perfil:", profile?.subscription_status, profile?.role);
-      
-      setSubscriptionStatus(profile?.subscription_status ?? null);
-      setProfileRole(profile?.role ?? null);
-    } catch (e) {
-      console.error("[Auth] Erro:", e);
-      setSubscriptionStatus(null);
-      setProfileRole(null);
-    }
-  };
 
   const handleSectionChange = (sectionId) => {
     setActiveSection(sectionId);

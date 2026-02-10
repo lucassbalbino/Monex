@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/customSupabaseClient';
 import { logger } from '@/lib/logger';
@@ -15,6 +15,19 @@ export function useFinancialData() {
 }
 
 export function FinancialProvider({ children }) {
+  // Debug: detecta loops
+  const renderCountRef = useRef(0);
+  renderCountRef.current++;
+  if (renderCountRef.current > 50) {
+    console.error("[LOOP] FinancialProvider renderizou", renderCountRef.current, "vezes!");
+    return <div className="p-4 bg-red-900 text-white">Loop detectado no FinancialProvider</div>;
+  }
+  console.log("[FinancialProvider] Render #" + renderCountRef.current);
+  
+  // Ref para controlar inicialização e prevenir loops
+  const initRef = useRef(false);
+  const syncRef = useRef(false);
+  
   const syncTable = async (table, storageKey, setStateFn, localData) => {
    const {data, error} = await supabase.auth.getUser();
    if (error || !data.user) return;
@@ -132,6 +145,10 @@ export function FinancialProvider({ children }) {
 
   // --- Sync Profile with Supabase ---
   useEffect(() => {
+    // Previne múltiplas execuções
+    if (initRef.current) return;
+    initRef.current = true;
+    
     let isMounted = true;
     
     const fetchProfile = async () => {
@@ -139,7 +156,6 @@ export function FinancialProvider({ children }) {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
         if (userError) {
-           // Apenas loga o erro - deixa o App.jsx lidar com autenticação
            logger.warn("FinancialContext: Erro ao obter usuário:", userError.message);
            return;
         }
@@ -152,12 +168,18 @@ export function FinancialProvider({ children }) {
              .single();
            
            if (profile && !error && isMounted) {
-             setUserProfile(prev => ({
-               ...prev,
-               ...profile,
-               name: profile.full_name || prev?.name,
-               isSubscribed: profile.subscription_status === 'active' || profile.subscription_status === 'trialing'
-             }));
+             setUserProfile(prev => {
+               // Só atualiza se algo mudou
+               if (prev?.id === profile.id && prev?.subscription_status === profile.subscription_status) {
+                 return prev;
+               }
+               return {
+                 ...prev,
+                 ...profile,
+                 name: profile.full_name || prev?.name,
+                 isSubscribed: profile.subscription_status === 'active' || profile.subscription_status === 'trialing'
+               };
+             });
            }
         }
       } catch (error) {
@@ -173,6 +195,10 @@ export function FinancialProvider({ children }) {
   }, []);
   
   useEffect(() => {
+    // Previne múltiplas execuções
+    if (syncRef.current) return;
+    syncRef.current = true;
+    
     let isMounted = true;
     
     const syncAllData = async () => {
@@ -315,16 +341,24 @@ export function FinancialProvider({ children }) {
 
  
   // --- Data Integrity & Sync ---
+  // Executa apenas UMA vez na montagem para calcular spent inicial
   useEffect(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
 
     setSpendingLimits(prevLimits => {
-      return prevLimits.map(limit => {
+      // Verifica se precisa atualizar - evita loops
+      let needsUpdate = false;
+      
+      const newLimits = prevLimits.map(limit => {
+        let newLimit = { ...limit };
+        
         if (limit.period === 'Mensal' && limit.lastResetMonth !== currentMonth) {
-          return { ...limit, spent: 0, lastResetMonth: currentMonth };
+          newLimit = { ...newLimit, spent: 0, lastResetMonth: currentMonth };
+          needsUpdate = true;
         }
+        
         if (limit.category) {
           const calculatedSpent = transactions.reduce((total, t) => {
             if (t.type !== 'expense' || t.category !== limit.category) return total;
@@ -341,12 +375,21 @@ export function FinancialProvider({ children }) {
             }
             return inPeriod ? total + parseFloat(t.amount) : total;
           }, 0);
-          return { ...limit, spent: calculatedSpent, lastResetMonth: currentMonth };
+          
+          // Só atualiza se o valor mudou
+          if (Math.abs(calculatedSpent - (limit.spent || 0)) > 0.01) {
+            newLimit = { ...newLimit, spent: calculatedSpent, lastResetMonth: currentMonth };
+            needsUpdate = true;
+          }
         }
-        return limit;
+        
+        return newLimit;
       });
+      
+      // Só retorna novo array se algo mudou
+      return needsUpdate ? newLimits : prevLimits;
     });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Actions ---
 
