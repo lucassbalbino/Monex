@@ -46,10 +46,26 @@ function App() {
   // Initialization
   useEffect(() => {
     let mounted = true;
+    let isInitialized = false;
 
     const initSession = async () => {
+      logger.info("[Auth] Iniciando verificação de sessão...");
+      
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          logger.error("[Auth] Erro ao obter sessão:", error);
+          if (mounted) {
+            setSession(null);
+            setSubscriptionStatus(null);
+            setProfileRole(null);
+            setLoading(false);
+          }
+          return;
+        }
+        
+        logger.info("[Auth] Sessão obtida:", currentSession ? "Usuário logado" : "Sem sessão");
         
         if (mounted) {
           if (currentSession) {
@@ -60,18 +76,35 @@ function App() {
             setSubscriptionStatus(null);
             setProfileRole(null);
           }
+          isInitialized = true;
         }
       } catch (err) {
-        logger.error("Session init error:", err);
+        logger.error("[Auth] Session init error:", err);
+        if (mounted) {
+          setSession(null);
+          setSubscriptionStatus(null);
+          setProfileRole(null);
+        }
       } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          logger.info("[Auth] Loading finalizado");
+        }
       }
     };
 
     initSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      logger.info("[Auth] onAuthStateChange:", event, newSession ? "com sessão" : "sem sessão");
+      
       if (!mounted) return;
+      
+      // Evita processar eventos durante a inicialização
+      if (!isInitialized && event === 'INITIAL_SESSION') {
+        logger.info("[Auth] Ignorando INITIAL_SESSION - já processado por initSession");
+        return;
+      }
 
       if (event === 'SIGNED_OUT') {
         setSession(null);
@@ -90,17 +123,30 @@ function App() {
   }, []);
 
   const fetchSubscriptionStatus = async (userId) => {
+    logger.info("[Auth] Buscando status da assinatura para userId:", userId);
+    
     try {
-      const { data: profile } = await supabase
+      const { data: profile, error } = await supabase
         .from('profiles')
         .select('subscription_status, role')
         .eq('id', userId)
         .single();
       
-      setSubscriptionStatus(profile?.subscription_status);
+      if (error) {
+        logger.error("[Auth] Erro ao buscar perfil:", error);
+        // Se o perfil não existir, permite acesso mas sem subscription ativa
+        setSubscriptionStatus(null);
+        setProfileRole(null);
+        return;
+      }
+      
+      logger.info("[Auth] Perfil encontrado - status:", profile?.subscription_status, "role:", profile?.role);
+      
+      setSubscriptionStatus(profile?.subscription_status ?? null);
       setProfileRole(profile?.role ?? null);
     } catch (e) {
-      logger.error("Error fetching status", e);
+      logger.error("[Auth] Error fetching status:", e);
+      setSubscriptionStatus(null);
       setProfileRole(null);
     }
   };
