@@ -51,11 +51,17 @@ function App() {
     const initSession = async () => {
       logger.info("[Auth] Iniciando verificação de sessão...");
       
+      // Debug: verificar o que está no localStorage
+      const storedSession = localStorage.getItem('sb-' + import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0] + '-auth-token');
+      logger.info("[Auth] Token no localStorage:", storedSession ? "Existe" : "Não existe");
+      
       try {
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         
         if (error) {
           logger.error("[Auth] Erro ao obter sessão:", error);
+          // Limpa sessão corrompida
+          await supabase.auth.signOut();
           if (mounted) {
             setSession(null);
             setSubscriptionStatus(null);
@@ -63,6 +69,42 @@ function App() {
             setLoading(false);
           }
           return;
+        }
+        
+        // Verifica se a sessão está expirada
+        if (currentSession) {
+          const expiresAt = currentSession.expires_at;
+          const now = Math.floor(Date.now() / 1000);
+          const isExpired = expiresAt && expiresAt < now;
+          
+          logger.info("[Auth] Sessão encontrada - expira em:", expiresAt ? new Date(expiresAt * 1000).toLocaleString() : "N/A");
+          logger.info("[Auth] Sessão expirada?", isExpired);
+          
+          if (isExpired) {
+            logger.warn("[Auth] Sessão expirada, tentando refresh...");
+            const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+            
+            if (refreshError || !refreshData.session) {
+              logger.error("[Auth] Falha ao renovar sessão:", refreshError);
+              await supabase.auth.signOut();
+              if (mounted) {
+                setSession(null);
+                setSubscriptionStatus(null);
+                setProfileRole(null);
+                setLoading(false);
+              }
+              return;
+            }
+            
+            logger.info("[Auth] Sessão renovada com sucesso");
+            if (mounted) {
+              setSession(refreshData.session);
+              await fetchSubscriptionStatus(refreshData.session.user.id);
+              isInitialized = true;
+              setLoading(false);
+            }
+            return;
+          }
         }
         
         logger.info("[Auth] Sessão obtida:", currentSession ? "Usuário logado" : "Sem sessão");
@@ -80,6 +122,12 @@ function App() {
         }
       } catch (err) {
         logger.error("[Auth] Session init error:", err);
+        // Em caso de erro, limpa tudo para evitar loop
+        try {
+          await supabase.auth.signOut();
+        } catch (e) {
+          // ignora erro de signOut
+        }
         if (mounted) {
           setSession(null);
           setSubscriptionStatus(null);
@@ -105,12 +153,21 @@ function App() {
         logger.info("[Auth] Ignorando INITIAL_SESSION - já processado por initSession");
         return;
       }
+      
+      // Se o token foi renovado automaticamente, apenas atualiza
+      if (event === 'TOKEN_REFRESHED') {
+        logger.info("[Auth] Token renovado automaticamente");
+        if (newSession) {
+          setSession(newSession);
+        }
+        return;
+      }
 
       if (event === 'SIGNED_OUT') {
         setSession(null);
         setSubscriptionStatus(null);
         setProfileRole(null);
-      } else if (newSession) {
+      } else if (event === 'SIGNED_IN' && newSession) {
         setSession(newSession);
         await fetchSubscriptionStatus(newSession.user.id);
       }
