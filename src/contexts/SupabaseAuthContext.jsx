@@ -84,6 +84,37 @@ export const AuthProvider = ({ children }) => {
     return { error };
   }, [toast]);
 
+  const sendPasswordReset = useCallback(async (email) => {
+    try {
+      const redirectTo = `${window.location.origin}/reset-password`;
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Falha ao enviar email",
+          description: error.message || "Não foi possível enviar o email de recuperação.",
+        });
+        return { error };
+      }
+
+      toast({
+        title: "Email enviado",
+        description: "Verifique sua caixa de entrada para instruções de recuperação.",
+        className: "bg-green-600 text-white border-none",
+      });
+
+      return { data };
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: err.message || "Ocorreu um erro.",
+      });
+      return { error: err };
+    }
+  }, [toast]);
+
   const value = useMemo(() => ({
     user,
     session,
@@ -91,7 +122,8 @@ export const AuthProvider = ({ children }) => {
     signUp,
     signIn,
     signOut,
-  }), [user, session, loading, signUp, signIn, signOut]);
+    sendPasswordReset,
+  }), [user, session, loading, signUp, signIn, signOut, sendPasswordReset]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

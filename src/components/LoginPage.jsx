@@ -137,6 +137,10 @@ const LoginPage = () => {
             </div>
           </div>
 
+          <div className="flex justify-end">
+            <Button variant="link" className="text-sm text-[#14B8A6] p-0 h-auto" onClick={() => navigate('/forgot-password')}>Esqueci minha senha</Button>
+          </div>
+
           <Button 
             type="submit" 
             className="w-full h-12 bg-[#14B8A6] hover:bg-[#0D9488] text-white font-bold mt-6 shadow-lg shadow-[#14B8A6]/20"

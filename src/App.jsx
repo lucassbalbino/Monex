@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
 import Dashboard from '@/components/Dashboard';
@@ -8,6 +8,8 @@ import LandingPage from '@/components/LandingPage';
 import PlansPage from '@/components/PlansPage';
 import RegisterPage from '@/components/RegisterPage';
 import LoginPage from '@/components/LoginPage';
+import ForgotPasswordPage from '@/components/ForgotPasswordPage';
+import ResetPasswordPage from '@/components/ResetPasswordPage';
 import PaymentPage from '@/components/PaymentPage';
 import CheckoutSuccessPage from '@/components/CheckoutSuccessPage';
 import AdminLoginPage from '@/components/AdminLoginPage';
@@ -20,9 +22,11 @@ import { Loader2 } from 'lucide-react';
 
 
 function App() {
+  const appNavigate = useNavigate();
   const [session, setSession] = useState(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState(null); 
   const [profileRole, setProfileRole] = useState(null);
+  const [subscriptionChecked, setSubscriptionChecked] = useState(false);
   const [activeSection, setActiveSection] = useState('dashboard');
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
@@ -45,6 +49,23 @@ function App() {
     };
   }, [isSidebarOpen]);
   
+  // Detecta erros de auth no hash da URL (ex: link de recuperação expirado)
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash && hash.includes('error=')) {
+      const params = new URLSearchParams(hash.substring(1));
+      const error = params.get('error');
+      const errorCode = params.get('error_code');
+      const errorDescription = params.get('error_description');
+
+      if (error === 'access_denied' && (errorCode === 'otp_expired' || errorCode === 'otp_disabled')) {
+        // Limpa o hash da URL
+        window.history.replaceState(null, '', window.location.pathname);
+        appNavigate(`/forgot-password?expired=true`, { replace: true });
+      }
+    }
+  }, [appNavigate]);
+
   // Inicialização da autenticação
   useEffect(() => {
     if (initRef.current) return;
@@ -78,11 +99,13 @@ function App() {
           if (mounted) {
             setSubscriptionStatus(profile?.subscription_status ?? null);
             setProfileRole(profile?.role ?? null);
+            setSubscriptionChecked(true);
           }
         } else {
           setSession(null);
           setSubscriptionStatus(null);
           setProfileRole(null);
+          setSubscriptionChecked(true);
         }
         
       } catch (err) {
@@ -106,8 +129,10 @@ function App() {
         setSession(null);
         setSubscriptionStatus(null);
         setProfileRole(null);
+        setSubscriptionChecked(false);
       } else if (event === 'SIGNED_IN' && newSession?.user?.id) {
         setSession(newSession);
+        setSubscriptionChecked(false);
         supabase
           .from('profiles')
           .select('subscription_status, role')
@@ -117,6 +142,7 @@ function App() {
             if (mounted) {
               setSubscriptionStatus(profile?.subscription_status ?? null);
               setProfileRole(profile?.role ?? null);
+              setSubscriptionChecked(true);
             }
           });
       }
@@ -173,6 +199,8 @@ function App() {
           path="/login" 
           element={session ? <Navigate to="/" replace /> : <LoginPage />} 
         />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         
         {/* Landing Page */}
         <Route 
@@ -187,6 +215,10 @@ function App() {
         <Route path="/" element={
            !session ? (
              <LandingPage /> 
+           ) : !subscriptionChecked ? (
+             <div className="min-h-screen bg-[#0F172A] flex items-center justify-center">
+               <Loader2 className="h-10 w-10 text-[#14B8A6] animate-spin" />
+             </div>
            ) : hasActiveSubscription ? (
             <FinancialProvider>
                 <div className="min-h-screen bg-[#0F172A] text-white">
