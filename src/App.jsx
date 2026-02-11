@@ -124,6 +124,13 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!mounted) return;
       if (event === 'INITIAL_SESSION') return;
+
+      // Intercepta o evento de recuperação de senha e redireciona para a página de reset
+      if (event === 'PASSWORD_RECOVERY') {
+        setSession(newSession);
+        appNavigate('/reset-password', { replace: true });
+        return;
+      }
       
       if (event === 'SIGNED_OUT') {
         setSession(null);
@@ -131,6 +138,11 @@ function App() {
         setProfileRole(null);
         setSubscriptionChecked(false);
       } else if (event === 'SIGNED_IN' && newSession?.user?.id) {
+        // Ignora se estamos na página de reset (sessão de recovery)
+        if (window.location.pathname === '/reset-password') {
+          setSession(newSession);
+          return;
+        }
         setSession(newSession);
         setSubscriptionChecked(false);
         supabase
