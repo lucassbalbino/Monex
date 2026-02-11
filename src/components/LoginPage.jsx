@@ -138,7 +138,7 @@ const LoginPage = () => {
           </div>
 
           <div className="flex justify-end">
-            <Button variant="link" className="text-sm text-[#14B8A6] p-0 h-auto" onClick={() => navigate('/forgot-password')}>Esqueci minha senha</Button>
+            <Button type="button" variant="link" className="text-sm text-[#14B8A6] p-0 h-auto" onClick={() => navigate('/forgot-password')}>Esqueci minha senha</Button>
           </div>
 
           <Button 
