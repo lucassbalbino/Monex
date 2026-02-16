@@ -130,16 +130,13 @@ const RegisterPage = () => {
           navigate('/');
         } else {
           toast({
-            title: "Conta criada com sucesso!",
-            description: "Redirecionando para o pagamento...",
-            className: "bg-green-600 text-white border-none",
-          });
-          
-          // 3. FORCE REDIRECT TO PAYMENT
-          // We use window.location as a fallback to ensure we break out of any router state traps
-          // but prefer navigate for SPA feel. Since App.jsx might redirect to /, we trust App.jsx
-          // to eventually route to /payment if subscription is missing, but let's be explicit.
-          navigate('/payment');
+              title: "Conta criada com sucesso!",
+              description: "Verifique seu email para confirmar a conta.",
+              className: "bg-green-600 text-white border-none",
+            });
+
+            // Redireciona para a tela que aguarda confirmação de email
+            navigate('/confirm-email', { state: { email: formData.email, plan: selectedPlan } });
         }
 
       } else {

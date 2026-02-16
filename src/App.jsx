@@ -10,6 +10,7 @@ import RegisterPage from '@/components/RegisterPage';
 import LoginPage from '@/components/LoginPage';
 import ForgotPasswordPage from '@/components/ForgotPasswordPage';
 import ResetPasswordPage from '@/components/ResetPasswordPage';
+import ConfirmEmailPage from '@/components/ConfirmEmailPage';
 import PaymentPage from '@/components/PaymentPage';
 import CheckoutSuccessPage from '@/components/CheckoutSuccessPage';
 import AdminLoginPage from '@/components/AdminLoginPage';
@@ -213,6 +214,7 @@ function App() {
         />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/confirm-email" element={<ConfirmEmailPage />} />
         
         {/* Landing Page */}
         <Route 
