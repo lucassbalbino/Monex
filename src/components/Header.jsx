@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, User, Ticket, Settings, LogOut, Loader2, Menu, X } from 'lucide-react';
+import { Bell, User, Ticket, Settings, LogOut, Loader2, Menu, X, Lock, CheckCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useFinancialData } from '@/context/FinancialContext';
@@ -37,6 +37,16 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
     password: '',
     newPassword: ''
   });
+
+  // Password change flow state
+  const [passwordStep, setPasswordStep] = useState(1); // 1 = verify current, 2 = set new
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [verifyingPassword, setVerifyingPassword] = useState(false);
 
   const [notifications, setNotifications] = useState([]);
 
@@ -102,6 +112,14 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
       password: '',
       newPassword: ''
     });
+    // Reset password change flow
+    setPasswordStep(1);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
     setShowProfileDialog(true);
   };
 
@@ -129,12 +147,46 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
     }
   };
 
+  const handleVerifyCurrentPassword = async () => {
+    if (!currentPassword) {
+      toast({ title: "Senha obrigatória", description: "Digite sua senha atual.", variant: "destructive" });
+      return;
+    }
+    setVerifyingPassword(true);
+    try {
+      // Verify current password by signing in
+      const { error } = await supabase.auth.signInWithPassword({
+        email: userProfile?.email,
+        password: currentPassword
+      });
+      if (error) throw new Error("Senha atual incorreta.");
+
+      // Password is correct, move to step 2
+      setPasswordStep(2);
+      toast({ title: "Senha verificada!", description: "Agora defina sua nova senha.", className: "bg-green-600 text-white" });
+    } catch (error) {
+      toast({ title: "Senha incorreta", description: error.message, variant: "destructive" });
+    } finally {
+      setVerifyingPassword(false);
+    }
+  };
+
   const handleChangePassword = async () => {
+    if (!newPassword) {
+      toast({ title: "Senha obrigatória", description: "Digite a nova senha.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ title: "Senha fraca", description: "Use ao menos 6 caracteres.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      toast({ title: "Senhas não coincidem", description: "A confirmação deve ser igual à nova senha.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
-      if (!profileForm.newPassword) throw new Error("Digite a nova senha.");
-      
-      const { error } = await supabase.auth.updateUser({ password: profileForm.newPassword });
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
 
       toast({ title: "Senha alterada com sucesso!", className: "bg-green-600 text-white" });
@@ -315,19 +367,123 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
             </TabsContent>
             
             <TabsContent value="security" className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Nova Senha</Label>
-                <Input 
-                  type="password"
-                  placeholder="Mínimo 6 caracteres"
-                  value={profileForm.newPassword} 
-                  onChange={e => setProfileForm({...profileForm, newPassword: e.target.value})}
-                  className="bg-[#0F172A] border-[#334155] text-white"
-                />
-              </div>
-              <Button onClick={handleChangePassword} disabled={loading} className="w-full bg-red-600 hover:bg-red-700 text-white mt-2">
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Atualizar Senha'}
-              </Button>
+              {passwordStep === 1 ? (
+                /* Step 1: Verify current password */
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="bg-[#14B8A6]/20 p-2 rounded-full">
+                      <Lock className="h-4 w-4 text-[#14B8A6]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-white">Verificar identidade</p>
+                      <p className="text-xs text-gray-400">Digite sua senha atual para continuar</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Senha Atual</Label>
+                    <div className="relative">
+                      <Input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        placeholder="Digite sua senha atual"
+                        value={currentPassword}
+                        onChange={e => setCurrentPassword(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleVerifyCurrentPassword()}
+                        className="bg-[#0F172A] border-[#334155] text-white pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-300"
+                      >
+                        {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleVerifyCurrentPassword}
+                    disabled={verifyingPassword || !currentPassword}
+                    className="w-full bg-[#14B8A6] hover:bg-[#0D9488] text-white mt-2"
+                  >
+                    {verifyingPassword ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    {verifyingPassword ? 'Verificando...' : 'Verificar senha'}
+                  </Button>
+                </>
+              ) : (
+                /* Step 2: Set new password */
+                <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <button
+                      onClick={() => { setPasswordStep(1); setNewPassword(''); setConfirmNewPassword(''); }}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </button>
+                    <div className="bg-green-500/20 p-2 rounded-full">
+                      <CheckCircle className="h-4 w-4 text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-400">Identidade verificada</p>
+                      <p className="text-xs text-gray-400">Defina sua nova senha abaixo</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Nova Senha</Label>
+                    <div className="relative">
+                      <Input
+                        type={showNewPassword ? 'text' : 'password'}
+                        placeholder="Mínimo 6 caracteres"
+                        value={newPassword}
+                        onChange={e => setNewPassword(e.target.value)}
+                        className="bg-[#0F172A] border-[#334155] text-white pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-300"
+                      >
+                        {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Confirmar Nova Senha</Label>
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="Repita a nova senha"
+                        value={confirmNewPassword}
+                        onChange={e => setConfirmNewPassword(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
+                        className="bg-[#0F172A] border-[#334155] text-white pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-300"
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    {confirmNewPassword && newPassword !== confirmNewPassword && (
+                      <p className="text-xs text-red-400">As senhas não coincidem</p>
+                    )}
+                    {confirmNewPassword && newPassword === confirmNewPassword && newPassword.length >= 6 && (
+                      <p className="text-xs text-green-400 flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Senhas coincidem</p>
+                    )}
+                  </div>
+
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={loading || !newPassword || newPassword !== confirmNewPassword}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white mt-2"
+                  >
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    {loading ? 'Atualizando...' : 'Atualizar Senha'}
+                  </Button>
+                </>
+              )}
             </TabsContent>
           </Tabs>
         </DialogContent>

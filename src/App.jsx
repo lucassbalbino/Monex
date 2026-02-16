@@ -34,6 +34,8 @@ function App() {
   
   // Ref para prevenir múltiplas inicializações
   const initRef = useRef(false);
+  // Ref para acessar o userId atual dentro do callback de auth (evita stale closure)
+  const currentUserIdRef = useRef(null);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -89,6 +91,7 @@ function App() {
         const currentSession = data?.session;
         
         if (currentSession?.user?.id) {
+          currentUserIdRef.current = currentSession.user.id;
           setSession(currentSession);
           
           const { data: profile } = await supabase
@@ -134,6 +137,7 @@ function App() {
       }
       
       if (event === 'SIGNED_OUT') {
+        currentUserIdRef.current = null;
         setSession(null);
         setSubscriptionStatus(null);
         setProfileRole(null);
@@ -144,6 +148,12 @@ function App() {
           setSession(newSession);
           return;
         }
+        // Ignora re-sign-in do mesmo usuário (ex: verificação de senha nas configurações)
+        if (currentUserIdRef.current === newSession.user.id) {
+          setSession(newSession);
+          return;
+        }
+        currentUserIdRef.current = newSession.user.id;
         setSession(newSession);
         setSubscriptionChecked(false);
         supabase
