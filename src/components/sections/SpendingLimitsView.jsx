@@ -40,7 +40,7 @@ const SpendingLimitsView = () => {
               Criar Limite
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-[#1E293B] border-[#334155] text-white">
+          <DialogContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
             <DialogHeader>
               <DialogTitle>Novo Limite de Gastos</DialogTitle>
             </DialogHeader>
@@ -60,13 +60,13 @@ const SpendingLimitsView = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`bg-[#1E293B] rounded-xl border p-6 transition-all duration-300 ${status === 'excedido' ? 'border-red-500/50' : 'border-[#334155] hover:border-[#14B8A6]'}`}
+              className={`bg-[#1E293B] rounded-xl border p-6 transition-all duration-300 ${status === 'excedido' ? 'border-red-500/50' : 'border-[#14B8A6]/30 hover:border-[#14B8A6]'}`}
             >
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-lg font-bold text-white">{limit.name}</h3>
                   <div className="flex items-center gap-2 mt-1">
-                     <span className="text-xs bg-[#0F172A] px-2 py-0.5 rounded text-gray-400 border border-[#334155]">{limit.category}</span>
+                     <span className="text-xs bg-[#0F172A] px-2 py-0.5 rounded text-gray-400 border border-[#14B8A6]/30">{limit.category}</span>
                      <span className="text-xs text-gray-500">• {limit.period}</span>
                   </div>
                 </div>
@@ -82,7 +82,7 @@ const SpendingLimitsView = () => {
                       <Settings className="h-4 w-4" />
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="bg-[#1E293B] border-[#334155] text-white">
+                  <DialogContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
                     <DialogHeader>
                       <DialogTitle>Configurar Limite: {limit.name}</DialogTitle>
                     </DialogHeader>
@@ -133,7 +133,7 @@ const SpendingLimitsView = () => {
       </div>
 
       {spendingLimits.length === 0 && (
-         <div className="text-center py-12 bg-[#1E293B] border border-dashed border-[#334155] rounded-xl">
+         <div className="text-center py-12 bg-[#1E293B] border border-dashed border-[#14B8A6]/30 rounded-xl">
            <div className="w-12 h-12 bg-[#334155] rounded-full flex items-center justify-center mx-auto mb-4">
              <Settings className="h-6 w-6 text-gray-400" />
            </div>

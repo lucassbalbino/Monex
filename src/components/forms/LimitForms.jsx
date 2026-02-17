@@ -68,17 +68,17 @@ export const CreateLimitForm = ({ onSuccess }) => {
           placeholder="Ex: Mercado Mensal" 
           value={name} 
           onChange={e => setName(e.target.value)} 
-          className="bg-[#0F172A] border-[#334155] text-white"
+          className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
         />
       </div>
 
       <div className="space-y-2">
         <Label className="text-gray-200">Categoria Associada</Label>
         <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger className="bg-[#0F172A] border-[#334155] text-white">
+          <SelectTrigger className="bg-[#0F172A] border-[#14B8A6]/30 text-white">
             <SelectValue placeholder="Selecione a categoria" />
           </SelectTrigger>
-          <SelectContent className="bg-[#1E293B] border-[#334155] text-white max-h-[200px]">
+          <SelectContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white max-h-[200px]">
             {CATEGORIES.map(cat => (
               <SelectItem key={cat} value={cat} className="focus:bg-[#334155] focus:text-white cursor-pointer">{cat}</SelectItem>
             ))}
@@ -95,7 +95,7 @@ export const CreateLimitForm = ({ onSuccess }) => {
             placeholder="0.00" 
             value={amount} 
             onChange={e => setAmount(e.target.value)} 
-            className="bg-[#0F172A] border-[#334155] text-white"
+            className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
             min="0"
             step="0.01"
           />
@@ -104,10 +104,10 @@ export const CreateLimitForm = ({ onSuccess }) => {
         <div className="space-y-2">
           <Label className="text-gray-200">Período</Label>
           <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="bg-[#0F172A] border-[#334155] text-white">
+            <SelectTrigger className="bg-[#0F172A] border-[#14B8A6]/30 text-white">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#1E293B] border-[#334155] text-white">
+            <SelectContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
               <SelectItem value="Semanal">Semanal</SelectItem>
               <SelectItem value="Mensal">Mensal</SelectItem>
               <SelectItem value="Anual">Anual</SelectItem>
@@ -147,7 +147,7 @@ export const EditLimitForm = ({ limitData, onSuccess }) => {
 
   return (
     <div className="space-y-6 mt-4">
-      <div className="p-4 bg-[#0F172A] rounded-lg border border-[#334155]">
+      <div className="p-4 bg-[#0F172A] rounded-lg border border-[#14B8A6]/30">
         <div className="flex justify-between items-center mb-2">
           <span className="text-gray-400 text-sm">Atual</span>
           <span className="text-white font-bold">{formatCurrency(limitData.limit)}</span>
@@ -170,7 +170,7 @@ export const EditLimitForm = ({ limitData, onSuccess }) => {
             type="button" 
             variant="outline" 
             onClick={() => adjustLimit(-50)}
-            className="bg-[#1E293B] border-[#334155] text-white hover:bg-[#334155]"
+            className="bg-[#1E293B] border-[#14B8A6]/30 text-white hover:bg-[#334155]"
           >
             <TrendingDown className="h-4 w-4" />
           </Button>
@@ -180,7 +180,7 @@ export const EditLimitForm = ({ limitData, onSuccess }) => {
               type="number" 
               value={newLimit} 
               onChange={e => setNewLimit(e.target.value)} 
-              className="bg-[#0F172A] border-[#334155] text-white text-center font-bold"
+              className="bg-[#0F172A] border-[#14B8A6]/30 text-white text-center font-bold"
               step="0.01"
             />
              {newLimit && <p className="text-[10px] text-center text-[#14B8A6] mt-1">{formatCurrency(newLimit)}</p>}
@@ -189,7 +189,7 @@ export const EditLimitForm = ({ limitData, onSuccess }) => {
             type="button" 
             variant="outline" 
             onClick={() => adjustLimit(50)}
-            className="bg-[#1E293B] border-[#334155] text-white hover:bg-[#334155]"
+            className="bg-[#1E293B] border-[#14B8A6]/30 text-white hover:bg-[#334155]"
           >
             <TrendingUp className="h-4 w-4" />
           </Button>

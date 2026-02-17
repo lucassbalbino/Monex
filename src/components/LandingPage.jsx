@@ -273,10 +273,10 @@ const LandingPage = () => {
         {isMenuOpen && (
           <div className="md:hidden bg-[#0F172A] border-b border-[#1E293B]">
             <div className="px-4 pt-2 pb-6 space-y-2">
-              <button onClick={() => scrollToSection('benefits')} className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-[#1E293B] rounded-md">Benefícios</button>
-              <button onClick={() => scrollToSection('features')} className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-[#1E293B] rounded-md">Funcionalidades</button>
-              <button onClick={() => scrollToSection('testimonials')} className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-[#1E293B] rounded-md">Depoimentos</button>
-              <button onClick={() => navigate('/login')} className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-[#1E293B] rounded-md">Entrar</button>
+              <button onClick={() => scrollToSection('benefits')} className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-[#1E293B] rounded-xl">Benefícios</button>
+              <button onClick={() => scrollToSection('features')} className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-[#1E293B] rounded-xl">Funcionalidades</button>
+              <button onClick={() => scrollToSection('testimonials')} className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-[#1E293B] rounded-xl">Depoimentos</button>
+              <button onClick={() => navigate('/login')} className="block w-full text-left px-3 py-2 text-gray-300 hover:text-white hover:bg-[#1E293B] rounded-xl">Entrar</button>
               <div className="pt-2">
                 <Button onClick={() => handleSubscribe(null)} className="w-full bg-[#14B8A6] hover:bg-[#0D9488]">Começar Agora</Button>
               </div>

@@ -137,7 +137,7 @@ const ChallengesView = () => {
             <Button 
               onClick={resetToDefaultGoals}
               variant="outline"
-              className="border-[#334155] text-gray-300 hover:text-white hover:bg-[#334155] gap-2"
+              className="border-[#14B8A6]/30 text-gray-300 hover:text-white hover:bg-[#334155] gap-2"
             >
               <RefreshCw className="h-4 w-4" />
               Restaurar Padrão
@@ -159,7 +159,7 @@ const ChallengesView = () => {
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-[#1E293B] border border-[#334155] border-dashed rounded-xl p-12 text-center flex flex-col items-center justify-center min-h-[400px]"
+            className="bg-[#1E293B] border border-[#14B8A6]/30 border-dashed rounded-xl p-12 text-center flex flex-col items-center justify-center min-h-[400px]"
           >
             <div className="inline-flex p-6 rounded-full bg-[#334155] mb-6">
               <Target className="h-12 w-12 text-gray-400" />
@@ -180,7 +180,7 @@ const ChallengesView = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-[#1E293B] rounded-xl border border-[#334155] p-6 flex flex-col justify-between hover:border-purple-500/50 transition-colors group relative shadow-lg"
+                className="bg-[#1E293B] rounded-xl border border-[#14B8A6]/30 p-6 flex flex-col justify-between hover:border-purple-500/50 transition-colors group relative shadow-lg"
               >
                  <div className="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button 
@@ -223,7 +223,7 @@ const ChallengesView = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-baseline justify-between mt-4 pb-2 border-b border-[#334155]/50">
+                  <div className="flex items-baseline justify-between mt-4 pb-2 border-b border-[#14B8A6]/30">
                     <span className="text-xs text-gray-400 uppercase font-medium">Progresso</span>
                     <span className="text-xs font-bold text-white">
                       {goal.targetAmount > 0 ? (((goal.currentAmount || 0) / goal.targetAmount) * 100).toFixed(0) : '0'}%
@@ -243,14 +243,14 @@ const ChallengesView = () => {
                 </div>
                 
                 <div className="space-y-4">
-                  <div className="h-3 w-full bg-[#0F172A] rounded-full overflow-hidden border border-[#334155]/50 p-0.5">
+                  <div className="h-3 w-full bg-[#0F172A] rounded-full overflow-hidden border border-[#14B8A6]/30 p-0.5">
                     <div 
                       className={`h-full bg-gradient-to-r ${getGoalColor(goal)} rounded-full transition-all duration-1000 ease-out shadow-lg`}
                       style={{ width: `${Math.min((goal.targetAmount > 0 ? (goal.currentAmount || 0) / goal.targetAmount : 0) * 100, 100)}%` }}
                     />
                   </div>
                   
-                  <div className="flex justify-between items-center text-xs text-gray-400 bg-[#0F172A] p-2 rounded-lg border border-[#334155]/30">
+                  <div className="flex justify-between items-center text-xs text-gray-400 bg-[#0F172A] p-2 rounded-lg border border-[#14B8A6]/30">
                     <span className="flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5 text-gray-400" />
                       Prazo estimado
@@ -273,7 +273,7 @@ const ChallengesView = () => {
           setIsCreating(false);
         }
       }}>
-        <DialogContent className="sm:max-w-[500px] bg-[#1E293B] border-[#334155] text-white">
+        <DialogContent className="sm:max-w-[500px] bg-[#1E293B] border-[#14B8A6]/30 text-white">
           <DialogHeader>
             <DialogTitle>{isCreating ? 'Criar Novo Desafio' : 'Modificar Meta'}</DialogTitle>
             <DialogDescription className="text-gray-400">
@@ -289,7 +289,7 @@ const ChallengesView = () => {
                 placeholder="Ex: Viagem para Europa"
                 value={goalForm.name || ''} 
                 onChange={(e) => setGoalForm({...goalForm, name: e.target.value})}
-                className="bg-[#0F172A] border-[#334155] text-white" 
+                className="bg-[#0F172A] border-[#14B8A6]/30 text-white" 
                 disabled={editingGoal?.isFixed} 
               />
               {editingGoal?.isFixed && <p className="text-[10px] text-amber-500">O nome desta meta fixa não pode ser alterado.</p>}
@@ -301,7 +301,7 @@ const ChallengesView = () => {
                 id="goal-desc" 
                 value={goalForm.description || ''} 
                 onChange={(e) => setGoalForm({...goalForm, description: e.target.value})}
-                className="bg-[#0F172A] border-[#334155] text-white min-h-[80px]" 
+                className="bg-[#0F172A] border-[#14B8A6]/30 text-white min-h-[80px]" 
                 placeholder="Detalhes sobre sua meta..."
               />
             </div>
@@ -314,7 +314,7 @@ const ChallengesView = () => {
                   type="number"
                   value={goalForm.targetAmount || ''} 
                   onChange={(e) => setGoalForm({...goalForm, targetAmount: e.target.value})}
-                  className="bg-[#0F172A] border-[#334155] text-white" 
+                  className="bg-[#0F172A] border-[#14B8A6]/30 text-white" 
                   min="0"
                   step="0.01"
                 />
@@ -327,7 +327,7 @@ const ChallengesView = () => {
                   type="number"
                   value={goalForm.currentAmount || ''} 
                   onChange={(e) => setGoalForm({...goalForm, currentAmount: e.target.value})}
-                  className="bg-[#0F172A] border-[#334155] text-white" 
+                  className="bg-[#0F172A] border-[#14B8A6]/30 text-white" 
                   min="0"
                   step="0.01"
                 />
@@ -342,7 +342,7 @@ const ChallengesView = () => {
                 type="number"
                 value={goalForm.months || ''} 
                 onChange={(e) => setGoalForm({...goalForm, months: e.target.value})}
-                className="bg-[#0F172A] border-[#334155] text-white" 
+                className="bg-[#0F172A] border-[#14B8A6]/30 text-white" 
               />
               <p className="text-[10px] text-gray-400">
                 Necessário: {formatCurrency(((parseFloat(goalForm.targetAmount || 0) - parseFloat(goalForm.currentAmount || 0)) / (parseInt(goalForm.months) || 1)))} / mês
@@ -360,7 +360,7 @@ const ChallengesView = () => {
                 <Trash2 className="h-4 w-4 mr-2" /> Excluir
               </Button>
             )}
-            <Button variant="outline" onClick={() => { setEditingGoal(null); setIsCreating(false); }} className="border-[#334155] text-gray-300 hover:bg-[#334155]">
+            <Button variant="outline" onClick={() => { setEditingGoal(null); setIsCreating(false); }} className="border-[#14B8A6]/30 text-gray-300 hover:bg-[#334155]">
               Cancelar
             </Button>
             <Button onClick={handleSubmitGoal} className="bg-purple-600 hover:bg-purple-700 text-white">

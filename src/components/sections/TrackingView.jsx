@@ -125,7 +125,7 @@ const TrackingView = () => {
           <p className="text-gray-400">Gerencie suas finanças por período</p>
         </div>
 
-        <div className="flex items-center bg-[#1E293B] rounded-lg border border-[#334155] p-1">
+        <div className="flex items-center bg-[#1E293B] rounded-lg border border-[#14B8A6]/30 p-1">
           <Button
             variant={viewMode === 'monthly' ? 'secondary' : 'ghost'}
             onClick={() => setViewMode('monthly')}
@@ -144,7 +144,7 @@ const TrackingView = () => {
       </motion.div>
 
       {/* Year Selector Control - Always visible */}
-      <div className="flex items-center justify-center gap-4 bg-[#1E293B] p-4 rounded-xl border border-[#334155]">
+      <div className="flex items-center justify-center gap-4 bg-[#1E293B] p-4 rounded-xl border border-[#14B8A6]/30">
         <Button variant="ghost" size="icon" onClick={() => handleYearChange(-1)}>
           <ChevronLeft className="h-5 w-5 text-gray-400" />
         </Button>
@@ -162,7 +162,7 @@ const TrackingView = () => {
             
             {/* Month Selector Sidebar (Desktop) or Dropdown (Mobile) */}
             <div className="md:col-span-3 space-y-4">
-              <div className="bg-[#1E293B] rounded-xl border border-[#334155] p-4">
+              <div className="bg-[#1E293B] rounded-xl border border-[#14B8A6]/30 p-4">
                 <h3 className="text-sm font-medium text-gray-400 mb-3">Selecionar Mês</h3>
                 <div className="grid grid-cols-3 md:grid-cols-1 gap-2">
                   {MONTHS.map((month, index) => (
@@ -186,19 +186,19 @@ const TrackingView = () => {
               
               {/* Monthly Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-[#1E293B] p-4 rounded-xl border border-[#334155] flex flex-col">
+                <div className="bg-[#1E293B] p-4 rounded-xl border border-[#14B8A6]/30 flex flex-col">
                   <span className="text-gray-400 text-xs">Entradas ({MONTHS[selectedMonth]})</span>
                   <span className="text-xl font-bold text-green-500">
                     + {formatCurrency(currentMonthTotals.income)}
                   </span>
                 </div>
-                <div className="bg-[#1E293B] p-4 rounded-xl border border-[#334155] flex flex-col">
+                <div className="bg-[#1E293B] p-4 rounded-xl border border-[#14B8A6]/30 flex flex-col">
                   <span className="text-gray-400 text-xs">Saídas ({MONTHS[selectedMonth]})</span>
                   <span className="text-xl font-bold text-amber-500">
                     - {formatCurrency(currentMonthTotals.expense)}
                   </span>
                 </div>
-                <div className="bg-[#1E293B] p-4 rounded-xl border border-[#334155] flex flex-col">
+                <div className="bg-[#1E293B] p-4 rounded-xl border border-[#14B8A6]/30 flex flex-col">
                   <span className="text-gray-400 text-xs">Saldo ({MONTHS[selectedMonth]})</span>
                   <span className={`text-xl font-bold ${currentMonthTotals.income - currentMonthTotals.expense >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
                     {formatCurrency(currentMonthTotals.income - currentMonthTotals.expense)}
@@ -207,13 +207,13 @@ const TrackingView = () => {
               </div>
 
               {/* Filters & List */}
-              <div className="bg-[#1E293B] rounded-xl border border-[#334155] p-6">
+              <div className="bg-[#1E293B] rounded-xl border border-[#14B8A6]/30 p-6">
                 <div className="flex flex-col sm:flex-row gap-4 mb-6 justify-between">
                   <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input 
                       placeholder="Buscar transações..." 
-                      className="pl-10 bg-[#0F172A] border-[#334155] text-white"
+                      className="pl-10 bg-[#0F172A] border-[#14B8A6]/30 text-white"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -222,21 +222,21 @@ const TrackingView = () => {
                     <Button 
                       variant={filter === 'all' ? 'default' : 'outline'}
                       onClick={() => setFilter('all')}
-                      className={filter === 'all' ? "bg-blue-600 hover:bg-blue-700" : "bg-transparent border-[#334155] text-gray-300 hover:bg-[#334155]"}
+                      className={filter === 'all' ? "bg-blue-600 hover:bg-blue-700" : "bg-transparent border-[#14B8A6]/30 text-gray-300 hover:bg-[#334155]"}
                     >
                       Todas
                     </Button>
                     <Button 
                       variant={filter === 'income' ? 'default' : 'outline'}
                       onClick={() => setFilter('income')}
-                      className={filter === 'income' ? "bg-green-600 hover:bg-green-700" : "bg-transparent border-[#334155] text-gray-300 hover:bg-[#334155]"}
+                      className={filter === 'income' ? "bg-green-600 hover:bg-green-700" : "bg-transparent border-[#14B8A6]/30 text-gray-300 hover:bg-[#334155]"}
                     >
                       Receitas
                     </Button>
                     <Button 
                       variant={filter === 'expense' ? 'default' : 'outline'}
                       onClick={() => setFilter('expense')}
-                      className={filter === 'expense' ? "bg-amber-600 hover:bg-amber-700" : "bg-transparent border-[#334155] text-gray-300 hover:bg-[#334155]"}
+                      className={filter === 'expense' ? "bg-amber-600 hover:bg-amber-700" : "bg-transparent border-[#14B8A6]/30 text-gray-300 hover:bg-[#334155]"}
                     >
                       Despesas
                     </Button>
@@ -259,7 +259,7 @@ const TrackingView = () => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.2, delay: index * 0.05 }}
-                        className="flex items-center justify-between p-4 rounded-lg bg-[#0F172A] border border-[#334155] hover:border-[#475569] transition-colors group"
+                        className="flex items-center justify-between p-4 rounded-lg bg-[#0F172A] border border-[#14B8A6]/30 hover:border-[#475569] transition-colors group"
                       >
                         <div className="flex items-center gap-4">
                           <div className={`p-2 rounded-full ${transaction.type === 'income' ? 'bg-green-500/10 text-green-500' : 'bg-amber-500/10 text-amber-500'}`}>
@@ -296,7 +296,7 @@ const TrackingView = () => {
             <motion.div 
                initial={{ opacity: 0, scale: 0.95 }}
                animate={{ opacity: 1, scale: 1 }}
-               className="bg-[#1E293B] p-6 rounded-xl border border-[#334155]"
+               className="bg-[#1E293B] p-6 rounded-xl border border-[#14B8A6]/30"
             >
               <h3 className="text-gray-400 text-sm mb-1">Receita Anual Total</h3>
               <p className="text-3xl font-bold text-green-500">
@@ -307,7 +307,7 @@ const TrackingView = () => {
                initial={{ opacity: 0, scale: 0.95 }}
                animate={{ opacity: 1, scale: 1 }}
                transition={{ delay: 0.1 }}
-               className="bg-[#1E293B] p-6 rounded-xl border border-[#334155]"
+               className="bg-[#1E293B] p-6 rounded-xl border border-[#14B8A6]/30"
             >
               <h3 className="text-gray-400 text-sm mb-1">Despesa Anual Total</h3>
               <p className="text-3xl font-bold text-amber-500">
@@ -318,7 +318,7 @@ const TrackingView = () => {
                initial={{ opacity: 0, scale: 0.95 }}
                animate={{ opacity: 1, scale: 1 }}
                transition={{ delay: 0.2 }}
-               className="bg-[#1E293B] p-6 rounded-xl border border-[#334155]"
+               className="bg-[#1E293B] p-6 rounded-xl border border-[#14B8A6]/30"
             >
               <h3 className="text-gray-400 text-sm mb-1">Balanço Anual</h3>
               <p className={`text-3xl font-bold ${annualTotals.balance >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
@@ -332,7 +332,7 @@ const TrackingView = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-[#1E293B] p-6 rounded-xl border border-[#334155]"
+            className="bg-[#1E293B] p-6 rounded-xl border border-[#14B8A6]/30"
           >
             <h3 className="text-lg font-bold text-white mb-6">Comparativo Mensal {selectedYear}</h3>
             <div className="h-[400px] w-full">
@@ -355,8 +355,8 @@ const TrackingView = () => {
           </motion.div>
 
           {/* Monthly Breakdown Table */}
-          <div className="bg-[#1E293B] rounded-xl border border-[#334155] overflow-hidden">
-            <div className="grid grid-cols-4 bg-[#0F172A] p-4 font-medium text-gray-400 text-sm border-b border-[#334155]">
+          <div className="bg-[#1E293B] rounded-xl border border-[#14B8A6]/30 overflow-hidden">
+            <div className="grid grid-cols-4 bg-[#0F172A] p-4 font-medium text-gray-400 text-sm border-b border-[#14B8A6]/30">
               <div>Mês</div>
               <div className="text-right">Receita</div>
               <div className="text-right">Despesa</div>

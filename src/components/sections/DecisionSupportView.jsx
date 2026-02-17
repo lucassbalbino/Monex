@@ -64,7 +64,7 @@ const DecisionSupportView = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="bg-[#1E293B] rounded-xl border border-[#334155] p-6 hover:border-[#14B8A6] transition-all duration-300"
+            className="bg-[#1E293B] rounded-xl border border-[#14B8A6]/30 p-6 hover:border-[#14B8A6] transition-all duration-300"
           >
             <div className="flex items-start gap-3 mb-4">
               <div className="bg-[#14B8A6]/20 rounded-lg p-2">

@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -209,7 +210,7 @@ const QuickActions = () => {
     : 0;
 
   return (
-    <div className="bg-[#1E293B] rounded-xl border border-[#334155] p-6">
+    <div className="bg-[#1E293B] rounded-xl border border-[#14B8A6]/30 p-6">
       <h2 className="text-xl font-bold text-white mb-6">Ações Rápidas</h2>
       <div className="space-y-3">
         {actions.map((action, index) => {
@@ -232,7 +233,7 @@ const QuickActions = () => {
                     </Button>
                   </motion.div>
                 </DialogTrigger>
-                <DialogContent className="bg-[#1E293B] border-[#334155] text-white">
+                <DialogContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
                   <DialogHeader>
                     <DialogTitle>Registrar Nova Receita</DialogTitle>
                   </DialogHeader>
@@ -245,7 +246,7 @@ const QuickActions = () => {
                         placeholder="0.00"
                         value={incomeAmount}
                         onChange={(e) => setIncomeAmount(e.target.value)}
-                        className="bg-[#0F172A] border-[#334155] text-white"
+                        className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                         min="0"
                         step="0.01"
                       />
@@ -253,12 +254,11 @@ const QuickActions = () => {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="incomeDate" className="text-gray-200">Data do Recebimento</Label>
-                      <Input
+                      <DatePicker
                         id="incomeDate"
-                        type="date"
                         value={incomeDate}
-                        onChange={(e) => setIncomeDate(e.target.value)}
-                        className="bg-[#0F172A] border-[#334155] text-white"
+                        onChange={(dateStr) => setIncomeDate(dateStr)}
+                        placeholder="Selecione a data"
                       />
                     </div>
                     <div className="space-y-2">
@@ -268,18 +268,18 @@ const QuickActions = () => {
                         placeholder="Ex: Salário"
                         value={incomeDescription}
                         onChange={(e) => setIncomeDescription(e.target.value)}
-                        className="bg-[#0F172A] border-[#334155] text-white"
+                        className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#334155]">
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#14B8A6]/30">
                        <div className="space-y-2">
                         <Label className="text-gray-200">Frequência</Label>
                         <Select value={incomeType} onValueChange={setIncomeType}>
-                          <SelectTrigger className="bg-[#0F172A] border-[#334155] text-white">
+                          <SelectTrigger className="bg-[#0F172A] border-[#14B8A6]/30 text-white">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-[#1E293B] border-[#334155] text-white">
+                          <SelectContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
                             <SelectItem value="single">Única</SelectItem>
                             <SelectItem value="recurring">Recorrente</SelectItem>
                           </SelectContent>
@@ -296,7 +296,7 @@ const QuickActions = () => {
                               type="number"
                               value={incomeOccurrences}
                               onChange={(e) => setIncomeOccurrences(e.target.value)}
-                              className="bg-[#0F172A] border-[#334155] text-white pl-9"
+                              className="bg-[#0F172A] border-[#14B8A6]/30 text-white pl-9"
                               min="2"
                               max="120"
                             />
@@ -333,7 +333,7 @@ const QuickActions = () => {
                     </Button>
                   </motion.div>
                 </DialogTrigger>
-                <DialogContent className="bg-[#1E293B] border-[#334155] text-white sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+                <DialogContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Registrar Nova Despesa</DialogTitle>
                   </DialogHeader>
@@ -349,7 +349,7 @@ const QuickActions = () => {
                           placeholder="0.00"
                           value={expenseAmount}
                           onChange={(e) => setExpenseAmount(e.target.value)}
-                          className="bg-[#0F172A] border-[#334155] text-white"
+                          className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                           min="0"
                           step="0.01"
                         />
@@ -359,12 +359,11 @@ const QuickActions = () => {
                         <Label htmlFor="expenseDate" className="text-gray-200">
                           {expenseType === 'installment' ? 'Data 1ª Parcela' : 'Data'}
                         </Label>
-                        <Input
+                        <DatePicker
                           id="expenseDate"
-                          type="date"
                           value={expenseDate}
-                          onChange={(e) => setExpenseDate(e.target.value)}
-                          className="bg-[#0F172A] border-[#334155] text-white"
+                          onChange={(dateStr) => setExpenseDate(dateStr)}
+                          placeholder="Selecione a data"
                         />
                       </div>
                     </div>
@@ -377,7 +376,7 @@ const QuickActions = () => {
                         placeholder="Ex: Almoço no Restaurante"
                         value={expenseName}
                         onChange={(e) => setExpenseName(e.target.value)}
-                        className="bg-[#0F172A] border-[#334155] text-white"
+                        className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                       />
                     </div>
 
@@ -392,10 +391,10 @@ const QuickActions = () => {
                               key={cat.id}
                               onClick={() => setExpenseCategory(cat.id)}
                               className={`
-                                cursor-pointer rounded-md border p-2 flex items-center gap-2 transition-all
+                                cursor-pointer rounded-xl border p-2 flex items-center gap-2 transition-all
                                 ${isSelected 
                                   ? 'bg-amber-500/20 border-amber-500 text-amber-500' 
-                                  : 'bg-[#0F172A] border-[#334155] text-gray-400 hover:border-gray-500 hover:bg-[#1E293B]'}
+                                  : 'bg-[#0F172A] border-[#14B8A6]/30 text-gray-400 hover:border-gray-500 hover:bg-[#1E293B]'}
                               `}
                             >
                               <Icon className="h-4 w-4 shrink-0" />
@@ -406,14 +405,14 @@ const QuickActions = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#334155]">
+                    <div className="grid grid-cols-2 gap-4 pt-2 border-t border-[#14B8A6]/30">
                       <div className="space-y-2">
                         <Label className="text-gray-200">Tipo de Despesa</Label>
                         <Select value={expenseType} onValueChange={setExpenseType}>
-                          <SelectTrigger className="bg-[#0F172A] border-[#334155] text-white">
+                          <SelectTrigger className="bg-[#0F172A] border-[#14B8A6]/30 text-white">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-[#1E293B] border-[#334155] text-white">
+                          <SelectContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
                             <SelectItem value="single">Única</SelectItem>
                             <SelectItem value="recurring">Recorrente (Assinatura)</SelectItem>
                             <SelectItem value="installment">Parcelada</SelectItem>
@@ -437,7 +436,7 @@ const QuickActions = () => {
                               type="number"
                               value={expenseOccurrences}
                               onChange={(e) => setExpenseOccurrences(e.target.value)}
-                              className="bg-[#0F172A] border-[#334155] text-white pl-9"
+                              className="bg-[#0F172A] border-[#14B8A6]/30 text-white pl-9"
                               min="2"
                               max="120"
                             />
@@ -480,7 +479,7 @@ const QuickActions = () => {
                     </Button>
                   </motion.div>
                 </DialogTrigger>
-                <DialogContent className="bg-[#1E293B] border-[#334155] text-white">
+                <DialogContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
                   <DialogHeader>
                     <DialogTitle>Definir Nova Meta Financeira</DialogTitle>
                   </DialogHeader>
@@ -492,7 +491,7 @@ const QuickActions = () => {
                         placeholder="Ex: Viagem de Férias, Carro Novo"
                         value={goalName}
                         onChange={(e) => setGoalName(e.target.value)}
-                        className="bg-[#0F172A] border-[#334155] text-white"
+                        className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
@@ -504,7 +503,7 @@ const QuickActions = () => {
                           placeholder="0.00"
                           value={goalTotal}
                           onChange={(e) => setGoalTotal(e.target.value)}
-                          className="bg-[#0F172A] border-[#334155] text-white"
+                          className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                           min="0"
                           step="0.01"
                         />
@@ -518,13 +517,13 @@ const QuickActions = () => {
                           placeholder="12"
                           value={goalMonths}
                           onChange={(e) => setGoalMonths(e.target.value)}
-                          className="bg-[#0F172A] border-[#334155] text-white"
+                          className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                           min="1"
                         />
                       </div>
                     </div>
 
-                    <div className="bg-[#0F172A] p-4 rounded-lg border border-[#334155] flex items-center gap-4 mt-2">
+                    <div className="bg-[#0F172A] p-4 rounded-lg border border-[#14B8A6]/30 flex items-center gap-4 mt-2">
                       <div className="bg-[#8B5CF6]/20 p-2 rounded-full">
                         <Calculator className="h-5 w-5 text-[#8B5CF6]" />
                       </div>

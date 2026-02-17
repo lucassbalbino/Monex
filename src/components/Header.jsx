@@ -210,7 +210,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
   };
 
   return (
-    <header className="bg-[#1E293B] border-b border-[#334155] px-4 sm:px-6 py-4 sticky top-0 z-50 shadow-sm">
+    <header className="bg-[#1E293B] border-b border-[#14B8A6]/30 px-4 sm:px-6 py-4 sticky top-0 z-50 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Button 
@@ -259,7 +259,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
                 )}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 bg-[#1E293B] border-[#334155] text-white">
+            <DropdownMenuContent align="end" className="w-80 bg-[#1E293B] border-[#14B8A6]/30 text-white">
               <DropdownMenuLabel>Notificações</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-[#334155]" />
               <div className="max-h-[300px] overflow-y-auto">
@@ -267,7 +267,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
                   <div className="p-4 text-sm text-gray-500 text-center">Nenhuma notificação nova</div>
                 ) : (
                   notifications.map(notif => (
-                    <DropdownMenuItem key={notif.id} className="cursor-pointer focus:bg-[#334155] p-3 flex flex-col items-start gap-1 border-b border-[#334155] last:border-0">
+                    <DropdownMenuItem key={notif.id} className="cursor-pointer focus:bg-[#334155] p-3 flex flex-col items-start gap-1 border-b border-[#14B8A6]/30 last:border-0">
                       <div className="flex justify-between w-full">
                          <span className="font-semibold text-sm">{notif.title}</span>
                          <span className="text-[10px] bg-red-900/30 text-red-300 px-1.5 py-0.5 rounded uppercase">{notif.type === 'danger' ? 'Urgente' : 'Aviso'}</span>
@@ -309,7 +309,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
                 <User className="h-5 w-5 text-gray-300" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-[#1E293B] border-[#334155] text-white">
+            <DropdownMenuContent align="end" className="w-56 bg-[#1E293B] border-[#14B8A6]/30 text-white">
               <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-[#334155]" />
               <DropdownMenuItem onClick={handleOpenProfile} className="focus:bg-[#334155] cursor-pointer gap-2">
@@ -325,7 +325,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
 
       {/* Profile Settings Dialog */}
       <Dialog open={showProfileDialog} onOpenChange={setShowProfileDialog}>
-        <DialogContent className="bg-[#1E293B] border-[#334155] text-white sm:max-w-[500px]">
+        <DialogContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Configurações da Conta</DialogTitle>
           </DialogHeader>
@@ -342,7 +342,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
                 <Input 
                   value={profileForm.full_name} 
                   onChange={e => setProfileForm({...profileForm, full_name: e.target.value})}
-                  className="bg-[#0F172A] border-[#334155] text-white"
+                  className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                 />
               </div>
               <div className="space-y-2">
@@ -350,7 +350,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
                 <Input 
                   value={profileForm.email} 
                   disabled 
-                  className="bg-[#0F172A] border-[#334155] text-white opacity-60 cursor-not-allowed"
+                  className="bg-[#0F172A] border-[#14B8A6]/30 text-white opacity-60 cursor-not-allowed"
                 />
               </div>
               <div className="space-y-2">
@@ -358,7 +358,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
                 <Input 
                   value={profileForm.phone} 
                   onChange={e => setProfileForm({...profileForm, phone: e.target.value})}
-                  className="bg-[#0F172A] border-[#334155] text-white"
+                  className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                 />
               </div>
               <Button onClick={handleUpdateProfile} disabled={loading} className="w-full bg-[#14B8A6] hover:bg-[#0D9488] text-white mt-2">
@@ -388,7 +388,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
                         value={currentPassword}
                         onChange={e => setCurrentPassword(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleVerifyCurrentPassword()}
-                        className="bg-[#0F172A] border-[#334155] text-white pr-10"
+                        className="bg-[#0F172A] border-[#14B8A6]/30 text-white pr-10"
                       />
                       <button
                         type="button"
@@ -435,7 +435,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
                         placeholder="Mínimo 6 caracteres"
                         value={newPassword}
                         onChange={e => setNewPassword(e.target.value)}
-                        className="bg-[#0F172A] border-[#334155] text-white pr-10"
+                        className="bg-[#0F172A] border-[#14B8A6]/30 text-white pr-10"
                       />
                       <button
                         type="button"
@@ -456,7 +456,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
                         value={confirmNewPassword}
                         onChange={e => setConfirmNewPassword(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && handleChangePassword()}
-                        className="bg-[#0F172A] border-[#334155] text-white pr-10"
+                        className="bg-[#0F172A] border-[#14B8A6]/30 text-white pr-10"
                       />
                       <button
                         type="button"

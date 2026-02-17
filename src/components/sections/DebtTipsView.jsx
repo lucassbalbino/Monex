@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -155,7 +156,7 @@ const DebtTipsView = () => {
               <Plus className="mr-2 h-4 w-4" /> Nova Dívida
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-[#1E293B] border-[#334155] text-white">
+          <DialogContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
             <DialogHeader>
               <DialogTitle>Adicionar Dívida</DialogTitle>
             </DialogHeader>
@@ -166,7 +167,7 @@ const DebtTipsView = () => {
                   value={newDebt.name} 
                   onChange={e => setNewDebt({...newDebt, name: e.target.value})}
                   placeholder="Ex: Cartão Visa, Financiamento Carro..." 
-                  className="bg-[#0F172A] border-[#334155] text-white"
+                  className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -177,7 +178,7 @@ const DebtTipsView = () => {
                     value={newDebt.totalValue} 
                     onChange={e => setNewDebt({...newDebt, totalValue: e.target.value})}
                     placeholder="0.00" 
-                    className="bg-[#0F172A] border-[#334155] text-white"
+                    className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                     min="0"
                     step="0.01"
                   />
@@ -190,7 +191,7 @@ const DebtTipsView = () => {
                     value={newDebt.installmentValue} 
                     onChange={e => setNewDebt({...newDebt, installmentValue: e.target.value})}
                     placeholder="0.00" 
-                    className="bg-[#0F172A] border-[#334155] text-white"
+                    className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                     min="0"
                     step="0.01"
                   />
@@ -205,18 +206,17 @@ const DebtTipsView = () => {
                     value={newDebt.interestRate} 
                     onChange={e => setNewDebt({...newDebt, interestRate: e.target.value})}
                     placeholder="0.00" 
-                    className="bg-[#0F172A] border-[#334155] text-white"
+                    className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                     min="0"
                     step="0.01"
                   />
                 </div>
                 <div>
                   <Label>Prazo Final</Label>
-                  <Input 
-                    type="date"
-                    value={newDebt.deadline} 
-                    onChange={e => setNewDebt({...newDebt, deadline: e.target.value})}
-                    className="bg-[#0F172A] border-[#334155] text-white"
+                  <DatePicker
+                    value={newDebt.deadline}
+                    onChange={(dateStr) => setNewDebt({...newDebt, deadline: dateStr})}
+                    placeholder="Selecione o prazo"
                   />
                 </div>
               </div>
@@ -236,7 +236,7 @@ const DebtTipsView = () => {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddingDebt(false)} className="border-[#334155] text-gray-400 hover:text-white hover:bg-[#334155]">Cancelar</Button>
+              <Button variant="outline" onClick={() => setIsAddingDebt(false)} className="border-[#14B8A6]/30 text-gray-400 hover:text-white hover:bg-[#334155]">Cancelar</Button>
               <Button onClick={handleAddDebt} className="bg-[#14B8A6] hover:bg-[#0D9488] text-white">Salvar</Button>
             </DialogFooter>
           </DialogContent>
@@ -246,7 +246,7 @@ const DebtTipsView = () => {
       {/* Debts List */}
       <div className="grid grid-cols-1 gap-6">
         {sortedDebts.length === 0 ? (
-          <div className="text-center py-20 bg-[#1E293B]/50 rounded-xl border border-dashed border-[#334155]">
+          <div className="text-center py-20 bg-[#1E293B]/50 rounded-xl border border-dashed border-[#14B8A6]/30">
             <CheckCircle2 className="h-16 w-16 text-emerald-500/20 mx-auto mb-4" />
             <h3 className="text-xl font-medium text-gray-300">Você está livre de dívidas!</h3>
             <p className="text-gray-500 mt-2">Ou ainda não cadastrou nenhuma. Use o botão acima para começar.</p>
@@ -263,10 +263,10 @@ const DebtTipsView = () => {
                 key={debt.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`bg-[#1E293B] rounded-xl border ${debt.highPriority ? 'border-red-500/40 shadow-red-900/10' : 'border-[#334155]'} shadow-lg overflow-hidden`}
+                className={`bg-[#1E293B] rounded-xl border ${debt.highPriority ? 'border-red-500/40 shadow-red-900/10' : 'border-[#14B8A6]/30'} shadow-lg overflow-hidden`}
               >
                 {/* Header Section */}
-                <div className="p-6 border-b border-[#334155] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div className="p-6 border-b border-[#14B8A6]/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="flex items-center gap-4">
                     <div className={`p-3 rounded-lg ${debt.highPriority ? 'bg-red-500/20' : 'bg-[#334155]'}`}>
                       {debt.highPriority ? <AlertTriangle className="h-6 w-6 text-red-500" /> : <Banknote className="h-6 w-6 text-gray-400" />}
@@ -275,7 +275,7 @@ const DebtTipsView = () => {
                       <h3 className="text-xl font-bold text-white flex items-center gap-2">
                         {debt.name}
                         {debt.deadline && (
-                          <span className="text-xs font-normal text-gray-400 flex items-center gap-1 bg-[#0F172A] px-2 py-1 rounded-full border border-[#334155]">
+                          <span className="text-xs font-normal text-gray-400 flex items-center gap-1 bg-[#0F172A] px-2 py-1 rounded-full border border-[#14B8A6]/30">
                             <Calendar className="h-3 w-3" /> {new Date(debt.deadline).toLocaleDateString('pt-BR')}
                           </span>
                         )}
@@ -298,7 +298,7 @@ const DebtTipsView = () => {
                           <Plus className="h-4 w-4 mr-1" /> Pagar
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="bg-[#1E293B] border-[#334155] text-white">
+                      <DialogContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
                         <DialogHeader><DialogTitle>Registrar Pagamento</DialogTitle></DialogHeader>
                         <div className="py-4">
                           <Label>Valor Pago (R$)</Label>
@@ -306,7 +306,7 @@ const DebtTipsView = () => {
                             type="number"
                             value={paymentAmount}
                             onChange={(e) => setPaymentAmount(e.target.value)}
-                            className="bg-[#0F172A] border-[#334155] text-white mt-2"
+                            className="bg-[#0F172A] border-[#14B8A6]/30 text-white mt-2"
                             placeholder="0.00"
                             min="0"
                             step="0.01"
@@ -339,7 +339,7 @@ const DebtTipsView = () => {
                       <span className="text-gray-400">Progresso</span>
                       <span className="text-white font-bold">{progress.toFixed(1)}%</span>
                     </div>
-                    <div className="h-3 bg-[#0F172A] rounded-full overflow-hidden border border-[#334155]">
+                    <div className="h-3 bg-[#0F172A] rounded-full overflow-hidden border border-[#14B8A6]/30">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${progress}%` }}
@@ -377,7 +377,7 @@ const DebtTipsView = () => {
                                className={`relative text-left p-3 rounded-lg border transition-all duration-200 ${
                                  isSelected 
                                    ? `${plan.bg} ring-1 ring-offset-0 ring-offset-transparent ring-${plan.color.split('-')[1]}-500`
-                                   : 'bg-[#0F172A] border-[#334155] hover:border-gray-500 opacity-70 hover:opacity-100'
+                                   : 'bg-[#0F172A] border-[#14B8A6]/30 hover:border-gray-500 opacity-70 hover:opacity-100'
                                }`}
                              >
                                {isSelected && (

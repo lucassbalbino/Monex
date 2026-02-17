@@ -48,7 +48,7 @@ const ProgressView = () => {
       </motion.div>
 
       {displayItems.length === 0 ? (
-        <div className="text-center py-20 bg-[#1E293B] rounded-xl border border-dashed border-[#334155]">
+        <div className="text-center py-20 bg-[#1E293B] rounded-xl border border-dashed border-[#14B8A6]/30">
           <p className="text-gray-400">Nenhum progresso para exibir ainda.</p>
         </div>
       ) : (
@@ -64,7 +64,7 @@ const ProgressView = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 className={`bg-[#1E293B] rounded-xl border p-6 transition-all duration-300 ${
-                  isDebt ? 'border-amber-500/30 hover:border-amber-500' : 'border-[#334155] hover:border-[#14B8A6]'
+                  isDebt ? 'border-amber-500/30 hover:border-amber-500' : 'border-[#14B8A6]/30 hover:border-[#14B8A6]'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-4">
@@ -81,7 +81,7 @@ const ProgressView = () => {
                     <span className="text-2xl font-bold text-white">{formatCurrency(item.current)}</span>
                     <span className="text-xs text-gray-400">de {formatCurrency(item.target)}</span>
                   </div>
-                  <div className="relative h-3 bg-[#0F172A] rounded-full overflow-hidden border border-[#334155]/50">
+                  <div className="relative h-3 bg-[#0F172A] rounded-full overflow-hidden border border-[#14B8A6]/30">
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${Math.min(percentage, 100)}%` }}
@@ -113,7 +113,7 @@ const ProgressView = () => {
            initial={{ opacity: 0 }}
            animate={{ opacity: 1 }}
            transition={{ delay: 0.5 }}
-           className="bg-[#1E293B]/50 p-4 rounded-lg border border-[#334155] flex items-start gap-3"
+           className="bg-[#1E293B]/50 p-4 rounded-lg border border-[#14B8A6]/30 flex items-start gap-3"
          >
            <div className="p-2 bg-amber-500/10 rounded-full">
              <TrendingUp className="h-5 w-5 text-amber-500" />

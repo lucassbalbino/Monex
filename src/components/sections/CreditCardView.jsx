@@ -128,7 +128,7 @@ const CreditCardView = () => {
               <Plus className="h-5 w-5" /> Novo Cartão
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-[#1E293B] border-[#334155] text-white">
+          <DialogContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
             <DialogHeader>
               <DialogTitle>{editingCard ? 'Editar Cartão' : 'Adicionar Novo Cartão'}</DialogTitle>
             </DialogHeader>
@@ -139,7 +139,7 @@ const CreditCardView = () => {
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
                   placeholder="Ex: Nubank Principal"
-                  className="bg-[#0F172A] border-[#334155] text-white"
+                  className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                 />
               </div>
               
@@ -147,10 +147,10 @@ const CreditCardView = () => {
                 <div className="space-y-2">
                     <Label>Banco Emissor</Label>
                     <Select value={formData.bank} onValueChange={(val) => setFormData({...formData, bank: val})}>
-                        <SelectTrigger className="bg-[#0F172A] border-[#334155] text-white">
+                        <SelectTrigger className="bg-[#0F172A] border-[#14B8A6]/30 text-white">
                             <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#1E293B] border-[#334155] text-white">
+                        <SelectContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
                             {BANKS.map(b => (
                                 <SelectItem key={b.name} value={b.name}>{b.name}</SelectItem>
                             ))}
@@ -164,7 +164,7 @@ const CreditCardView = () => {
                         min="1" max="31"
                         value={formData.dueDate}
                         onChange={e => setFormData({...formData, dueDate: e.target.value})}
-                        className="bg-[#0F172A] border-[#334155] text-white"
+                        className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                     />
                 </div>
               </div>
@@ -176,7 +176,7 @@ const CreditCardView = () => {
                         type="number"
                         value={formData.limit}
                         onChange={e => setFormData({...formData, limit: e.target.value})}
-                        className="bg-[#0F172A] border-[#334155] text-white"
+                        className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                         placeholder="0.00"
                     />
                     {formData.limit && <p className="text-xs text-[#14B8A6]">{formatCurrency(formData.limit)}</p>}
@@ -187,14 +187,14 @@ const CreditCardView = () => {
                         maxLength={4}
                         value={formData.lastDigits}
                         onChange={e => setFormData({...formData, lastDigits: e.target.value})}
-                        className="bg-[#0F172A] border-[#334155] text-white"
+                        className="bg-[#0F172A] border-[#14B8A6]/30 text-white"
                         placeholder="1234"
                     />
                 </div>
               </div>
             </div>
             <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddOpen(false)} className="border-[#334155] text-gray-400 hover:text-white">Cancelar</Button>
+                <Button variant="outline" onClick={() => setIsAddOpen(false)} className="border-[#14B8A6]/30 text-gray-400 hover:text-white">Cancelar</Button>
                 <Button onClick={handleSaveCard} className="bg-[#14B8A6] hover:bg-[#0D9488] text-white">Salvar Cartão</Button>
             </DialogFooter>
           </DialogContent>
@@ -202,7 +202,7 @@ const CreditCardView = () => {
       </div>
 
       {creditCards.length === 0 ? (
-        <div className="text-center py-20 bg-[#1E293B]/50 rounded-xl border border-dashed border-[#334155]">
+        <div className="text-center py-20 bg-[#1E293B]/50 rounded-xl border border-dashed border-[#14B8A6]/30">
             <CardIcon className="h-16 w-16 text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-medium text-gray-300">Nenhum cartão cadastrado</h3>
             <p className="text-gray-500 mt-2">Adicione seus cartões para controlar faturas e limites.</p>
@@ -267,7 +267,7 @@ const CreditCardView = () => {
                             </div>
 
                             {/* Card Actions Overlay (Visible on Hover/Click) */}
-                            <div className="mt-4 space-y-3 bg-[#1E293B] p-4 rounded-xl border border-[#334155]">
+                            <div className="mt-4 space-y-3 bg-[#1E293B] p-4 rounded-xl border border-[#14B8A6]/30">
                                 <div className="flex justify-between text-sm text-gray-400 mb-2">
                                     <span>Limite Utilizado</span>
                                     <span className={`${usagePercent > 80 ? 'text-red-400' : 'text-white'}`}>{usagePercent.toFixed(0)}%</span>
@@ -296,12 +296,12 @@ const CreditCardView = () => {
                                                 Lançar Fatura
                                             </Button>
                                         </DialogTrigger>
-                                        <DialogContent className="bg-[#1E293B] border-[#334155] text-white">
+                                        <DialogContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
                                             <DialogHeader>
                                                 <DialogTitle>Lançar Fatura - {card.name}</DialogTitle>
                                             </DialogHeader>
                                             <div className="space-y-4 py-4">
-                                                <div className="bg-[#0F172A] p-4 rounded-lg border border-[#334155]">
+                                                <div className="bg-[#0F172A] p-4 rounded-lg border border-[#14B8A6]/30">
                                                   <p className="text-sm text-gray-400 mb-2">Este processo irá:</p>
                                                   <ul className="text-xs text-gray-500 list-disc pl-4 space-y-1">
                                                     <li>Adicionar o valor total como uma <strong>Despesa</strong> no seu histórico.</li>
@@ -314,7 +314,7 @@ const CreditCardView = () => {
                                                         type="number" 
                                                         value={invoiceAmount}
                                                         onChange={(e) => setInvoiceAmount(e.target.value)}
-                                                        className="bg-[#0F172A] border-[#334155] text-white mt-1"
+                                                        className="bg-[#0F172A] border-[#14B8A6]/30 text-white mt-1"
                                                         placeholder="0.00"
                                                     />
                                                 </div>

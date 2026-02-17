@@ -167,7 +167,7 @@ const ConsciousSpendingView = () => {
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
         {/* Input Card */}
-        <div className="bg-[#1E293B] rounded-xl p-6 border border-[#334155] shadow-lg flex flex-col justify-center">
+        <div className="bg-[#1E293B] rounded-xl p-6 border border-[#14B8A6]/30 shadow-lg flex flex-col justify-center">
           <div className="flex items-center gap-3 mb-6">
             <div className="bg-purple-500/20 p-2 rounded-lg">
               <Calculator className="h-6 w-6 text-purple-400" />
@@ -185,7 +185,7 @@ const ConsciousSpendingView = () => {
                 placeholder="Ex: Tênis novo, Smartphone..." 
                 value={item}
                 onChange={(e) => setItem(e.target.value)}
-                className="bg-[#0F172A] border-[#334155] text-white mt-1 h-12"
+                className="bg-[#0F172A] border-[#14B8A6]/30 text-white mt-1 h-12"
               />
             </div>
             <div>
@@ -195,7 +195,7 @@ const ConsciousSpendingView = () => {
                 placeholder="0.00" 
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                className="bg-[#0F172A] border-[#334155] text-white mt-1 h-12"
+                className="bg-[#0F172A] border-[#14B8A6]/30 text-white mt-1 h-12"
                 min="0"
                 step="0.01"
               />
@@ -283,7 +283,7 @@ const ConsciousSpendingView = () => {
               key="placeholder"
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }}
-              className="bg-[#1E293B]/50 rounded-xl border border-[#334155] border-dashed flex items-center justify-center p-6"
+              className="bg-[#1E293B]/50 rounded-xl border border-[#14B8A6]/30 border-dashed flex items-center justify-center p-6"
             >
               <div className="text-center text-gray-500">
                 <Lightbulb className="h-12 w-12 mx-auto mb-3 opacity-20" />
@@ -299,7 +299,7 @@ const ConsciousSpendingView = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
-        className="bg-gradient-to-br from-[#0F172A] to-[#1E293B] rounded-xl p-8 border border-[#334155] relative overflow-hidden"
+        className="bg-gradient-to-br from-[#0F172A] to-[#1E293B] rounded-xl p-8 border border-[#14B8A6]/30 relative overflow-hidden"
       >
         <div className="absolute top-0 right-0 p-4 opacity-10">
           <Lightbulb className="h-32 w-32 text-white" />

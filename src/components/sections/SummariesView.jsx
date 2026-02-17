@@ -108,17 +108,17 @@ const SummariesView = () => {
            initial={{ opacity: 0, x: 20 }}
            animate={{ opacity: 1, x: 0 }}
            transition={{ duration: 0.5 }}
-           className="flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-[#1E293B] p-2 rounded-xl border border-[#334155]"
+           className="flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-[#1E293B] p-2 rounded-xl border border-[#14B8A6]/30"
         >
           {/* Controls Group */}
           <div className="flex gap-2 w-full sm:w-auto">
             {viewMode === 'monthly' && (
               <div className="w-[140px]">
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                  <SelectTrigger className="bg-[#0F172A] border-[#334155] text-white h-9">
+                  <SelectTrigger className="bg-[#0F172A] border-[#14B8A6]/30 text-white h-9">
                     <SelectValue placeholder="Mês" />
                   </SelectTrigger>
-                  <SelectContent className="bg-[#1E293B] border-[#334155] text-white max-h-[300px]">
+                  <SelectContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white max-h-[300px]">
                     {months.map((month) => (
                       <SelectItem key={month.value} value={month.value} className="focus:bg-[#334155] focus:text-white cursor-pointer">
                         {month.label}
@@ -131,10 +131,10 @@ const SummariesView = () => {
             
             <div className="w-[100px]">
               <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger className="bg-[#0F172A] border-[#334155] text-white h-9">
+                <SelectTrigger className="bg-[#0F172A] border-[#14B8A6]/30 text-white h-9">
                   <SelectValue placeholder="Ano" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#1E293B] border-[#334155] text-white">
+                <SelectContent className="bg-[#1E293B] border-[#14B8A6]/30 text-white">
                   {availableYears.map((year) => (
                     <SelectItem key={year} value={String(year)} className="focus:bg-[#334155] focus:text-white cursor-pointer">
                       {year}
@@ -148,7 +148,7 @@ const SummariesView = () => {
           <div className="h-6 w-px bg-[#334155] hidden sm:block"></div>
 
           {/* View Mode Toggle */}
-          <div className="flex bg-[#0F172A] p-1 rounded-lg border border-[#334155] w-full sm:w-auto">
+          <div className="flex bg-[#0F172A] p-1 rounded-lg border border-[#14B8A6]/30 w-full sm:w-auto">
             <button
               onClick={() => setViewMode('monthly')}
               className={`flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
@@ -178,7 +178,7 @@ const SummariesView = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="bg-[#1E293B] p-6 rounded-xl border border-[#334155]"
+          className="bg-[#1E293B] p-6 rounded-xl border border-[#14B8A6]/30"
         >
           <h3 className="text-gray-400 text-sm mb-1">Receita {viewMode === 'monthly' ? 'Mensal' : 'Anual'}</h3>
           <p className="text-2xl font-bold text-green-500">{formatCurrency(totalIncome)}</p>
@@ -187,7 +187,7 @@ const SummariesView = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-[#1E293B] p-6 rounded-xl border border-[#334155]"
+          className="bg-[#1E293B] p-6 rounded-xl border border-[#14B8A6]/30"
         >
           <h3 className="text-gray-400 text-sm mb-1">Despesa {viewMode === 'monthly' ? 'Mensal' : 'Anual'}</h3>
           <p className="text-2xl font-bold text-amber-500">{formatCurrency(totalExpenses)}</p>
@@ -196,7 +196,7 @@ const SummariesView = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="bg-[#1E293B] p-6 rounded-xl border border-[#334155]"
+          className="bg-[#1E293B] p-6 rounded-xl border border-[#14B8A6]/30"
         >
           <h3 className="text-gray-400 text-sm mb-1">Saldo {viewMode === 'monthly' ? 'Mensal' : 'Anual'}</h3>
           <p className={`text-2xl font-bold ${balance >= 0 ? 'text-blue-500' : 'text-red-500'}`}>
@@ -210,7 +210,7 @@ const SummariesView = () => {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="bg-[#1E293B] p-6 rounded-xl border border-[#334155]"
+          className="bg-[#1E293B] p-6 rounded-xl border border-[#14B8A6]/30"
         >
           <h2 className="text-xl font-bold text-white mb-6">Despesas por Categoria ({viewMode === 'monthly' ? 'Mês' : 'Ano'})</h2>
           <div className="h-[300px] w-full">
@@ -251,16 +251,16 @@ const SummariesView = () => {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="bg-[#1E293B] p-6 rounded-xl border border-[#334155]"
+          className="bg-[#1E293B] p-6 rounded-xl border border-[#14B8A6]/30"
         >
           <h2 className="text-xl font-bold text-white mb-6">Extrato ({viewMode === 'monthly' ? getSelectedMonthName() : `Ano ${selectedYear}`})</h2>
           <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
             {filteredTransactions.slice(0, 10).map((t, index) => (
-              <div key={t.id || index} className="flex justify-between items-center border-b border-[#334155] pb-3 last:border-0 last:pb-0 hover:bg-[#334155]/20 p-2 rounded transition-colors">
+              <div key={t.id || index} className="flex justify-between items-center border-b border-[#14B8A6]/30 pb-3 last:border-0 last:pb-0 hover:bg-[#334155]/20 p-2 rounded transition-colors">
                 <div>
                   <p className="font-medium text-white line-clamp-1" title={t.description}>{t.description}</p>
                   <div className="flex items-center gap-2">
-                     <span className="text-[10px] bg-[#0F172A] px-1.5 py-0.5 rounded text-gray-400 border border-[#334155]">{t.category}</span>
+                     <span className="text-[10px] bg-[#0F172A] px-1.5 py-0.5 rounded text-gray-400 border border-[#14B8A6]/30">{t.category}</span>
                      <p className="text-xs text-gray-400">{t.date}</p>
                   </div>
                 </div>

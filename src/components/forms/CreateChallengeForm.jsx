@@ -16,7 +16,7 @@ const CreateChallengeForm = () => {
   }, [toast]);
 
   return (
-    <div className="p-6 bg-[#1E293B] rounded-xl border border-[#334155] text-center text-gray-400">
+    <div className="p-6 bg-[#1E293B] rounded-xl border border-[#14B8A6]/30 text-center text-gray-400">
       <p className="text-lg font-semibold mb-4">Recurso de Criação de Desafio Removido</p>
       <p>Este formulário foi desativado conforme a sua última solicitação. O foco agora é em 'Metas' financeiras.</p>
     </div>
