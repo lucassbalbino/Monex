@@ -18,6 +18,8 @@ import AdminDashboard from '@/components/AdminDashboard';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { Toaster } from '@/components/ui/toaster';
 import { FinancialProvider } from '@/context/FinancialContext';
+import { ClawdBotProvider } from '@/context/ClawdBotContext';
+import ActionConfirmation from '@/components/clawdbot/ActionConfirmation';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Loader2 } from 'lucide-react';
 
@@ -245,6 +247,7 @@ function App() {
              </div>
            ) : hasActiveSubscription ? (
             <FinancialProvider>
+              <ClawdBotProvider setActiveSection={handleSectionChange}>
                 <div className="min-h-screen bg-[#0F172A] text-white">
                   <Sidebar 
                     activeSection={activeSection} 
@@ -263,7 +266,11 @@ function App() {
                       <Dashboard activeSection={activeSection} />
                     </main>
                   </div>
+
+                  {/* ClawdBot Action Confirmation — renderizado uma única vez */}
+                  <ActionConfirmation />
                 </div>
+              </ClawdBotProvider>
             </FinancialProvider>
            ) : (
              // Logged in but no subscription -> Redirect to payment

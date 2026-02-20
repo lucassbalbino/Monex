@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Bot, User, RefreshCw, Sparkles, AlertCircle } from 'lucide-react';
+import { Send, Bot, User, RefreshCw, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useFinancialData } from '@/context/FinancialContext';
+import { useClawdBotContext } from '@/context/ClawdBotContext';
 import { formatCurrency } from '@/lib/utils';
 import { supabase } from '@/lib/customSupabaseClient';
 import { logger } from '@/lib/logger';
@@ -20,9 +21,12 @@ const ChatInterface = ({ className, compact = false }) => {
     userProfile
   } = useFinancialData();
 
+  // ClawdBot — contexto centralizado para detecção de ações no chat
+  const { detectChatAction, triggerActionFromChat } = useClawdBotContext();
+
   const [userId, setUserId] = useState(null);
   const [messages, setMessages] = useState([
-    { id: 1, type: 'bot', text: 'Olá! Sou o Monex, seu assistente financeiro inteligente. Analiso seus dados em tempo real para te dar as melhores dicas. Como posso ajudar hoje?' }
+    { id: 1, type: 'bot', text: 'Olá! Sou o ClawdBot, seu assistente financeiro inteligente. Analiso seus dados em tempo real para te dar as melhores dicas. Posso também executar ações como criar metas, registrar transações e muito mais. Como posso ajudar hoje?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -123,7 +127,14 @@ const ChatInterface = ({ className, compact = false }) => {
         periodo: l.period
       })),
       alertas: [], // Array vazio por enquanto, pode implementar depois
-      dataAtual: new Date().toISOString().split('T')[0]
+      dataAtual: new Date().toISOString().split('T')[0],
+      clawdbot: {
+        capabilities: [
+          'criar_meta', 'ajustar_limite', 'registrar_transacao',
+          'pagar_divida', 'analisar_gastos', 'sugerir_economia'
+        ],
+        instructions: 'Você é o ClawdBot, assistente financeiro proativo do Monex. Quando o usuário pedir para executar uma ação (criar meta, registrar gasto, etc.), responda confirmando a ação e os dados. Seja proativo em sugerir melhorias financeiras.'
+      }
     };
   };
 
@@ -216,6 +227,18 @@ const ChatInterface = ({ className, compact = false }) => {
     setMessages(prev => [...prev, userMessage]);
     const query = sanitizedInput;
     setInput('');
+
+    // Detecta se o usuário quer executar uma ação (criar meta, pagar dívida, etc.)
+    const actionDetection = detectChatAction(query);
+    if (actionDetection.detected) {
+      triggerActionFromChat(actionDetection.action, {});
+      setMessages(prev => [...prev, { 
+        id: Date.now(), 
+        type: 'bot', 
+        text: `Detectei que você quer executar uma ação. Abri o formulário de confirmação para você preencher os dados. Enquanto isso, vou consultar minha base para te dar mais contexto...`
+      }]);
+    }
+
     generateResponse(query);
   };
 
@@ -229,7 +252,7 @@ const ChatInterface = ({ className, compact = false }) => {
           </div>
           <div>
             <span className="font-bold text-white text-lg flex items-center gap-2">
-              Monex AI
+              ClawdBot
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#14B8A6]/10 border border-[#14B8A6]/20">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#14B8A6] opacity-75"></span>
@@ -238,7 +261,7 @@ const ChatInterface = ({ className, compact = false }) => {
                 <span className="text-[10px] font-medium text-[#14B8A6] uppercase tracking-wider">Online</span>
               </div>
             </span>
-            {!compact && <p className="text-xs text-slate-400 mt-0.5">Seu consultor financeiro pessoal 24h</p>}
+            {!compact && <p className="text-xs text-slate-400 mt-0.5">Seu consultor financeiro pessoal com IA</p>}
           </div>
         </div>
         <Button 
@@ -328,7 +351,7 @@ const ChatInterface = ({ className, compact = false }) => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSend()}
-            placeholder="Pergunte sobre seus gastos, metas ou peça uma dica..."
+            placeholder="Pergunte, peça uma meta, registre um gasto..."
             disabled={isLoading}
             className="flex-1 bg-[#1E293B] text-white rounded-xl px-4 py-3.5 pr-12 focus:outline-none focus:ring-2 focus:ring-[#14B8A6] focus:border-transparent border border-[#334155] placeholder-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-inner"
           />
@@ -346,7 +369,7 @@ const ChatInterface = ({ className, compact = false }) => {
         </div>
         <div className="text-center mt-2">
             <p className="text-[10px] text-slate-600">
-                O Monex AI pode cometer erros. Verifique informações importantes.
+                ClawdBot pode executar ações e cometer erros. Verifique informações importantes.
             </p>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, User, Ticket, Settings, LogOut, Loader2, Menu, X, Lock, CheckCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { User, Ticket, Settings, LogOut, Loader2, Menu, X, Lock, CheckCircle, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useFinancialData } from '@/context/FinancialContext';
@@ -22,12 +22,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from '@/lib/customSupabaseClient';
+import NotificationBell from '@/components/clawdbot/NotificationBell';
+import { useClawdBotContext } from '@/context/ClawdBotContext';
 
 const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
   const { toast } = useToast();
   const { userProfile, creditCards, debts, updateUserProfile } = useFinancialData();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // ClawdBot — usa o contexto centralizado (instância única)
+  const {
+    notifications: clawdNotifications,
+    unreadCount: clawdUnread,
+    handleMarkAllRead,
+    handleInsightAction,
+    handleDismiss,
+  } = useClawdBotContext();
   
   // Profile Form State
   const [profileForm, setProfileForm] = useState({
@@ -48,60 +59,8 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [verifyingPassword, setVerifyingPassword] = useState(false);
 
-  const [notifications, setNotifications] = useState([]);
-
   // Admin check based on role from profiles
   const isAdmin = userProfile?.role === 'admin';
-
-  // --- Notification Logic ---
-  useEffect(() => {
-    const checkExpirations = () => {
-      const today = new Date();
-      const next3Days = new Date();
-      next3Days.setDate(today.getDate() + 3);
-
-      const alerts = [];
-
-      // Check Credit Cards
-      creditCards.forEach(card => {
-        const dueDay = card.dueDate;
-        const currentDay = today.getDate();
-        
-        if (dueDay >= currentDay && dueDay <= currentDay + 3) {
-          const daysLeft = dueDay - currentDay;
-          alerts.push({
-            id: `card-${card.id}`,
-            title: `Fatura: ${card.name}`,
-            desc: daysLeft === 0 ? "Vence hoje!" : `Vence em ${daysLeft} dias`,
-            type: 'warning'
-          });
-        }
-      });
-
-      // Check Debts
-      debts.forEach(debt => {
-        if (!debt.dueDate) return;
-        const due = new Date(debt.dueDate);
-        due.setMinutes(due.getMinutes() + due.getTimezoneOffset());
-        
-        const diffTime = due - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays >= 0 && diffDays <= 3) {
-           alerts.push({
-            id: `debt-${debt.id}`,
-            title: `Dívida: ${debt.name}`,
-            desc: diffDays === 0 ? "Vence hoje!" : `Vence em ${diffDays} dias`,
-            type: 'danger'
-          });
-        }
-      });
-
-      setNotifications(alerts);
-    };
-
-    checkExpirations();
-  }, [creditCards, debts]);
 
   // --- Profile Logic ---
   const handleOpenProfile = () => {
@@ -245,40 +204,14 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
           transition={{ duration: 0.5 }}
           className="flex items-center gap-2 md:gap-4"
         >
-          {/* Notifications */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="hover:bg-[#334155] transition-colors relative"
-              >
-                <Bell className="h-5 w-5 text-gray-300" />
-                {notifications.length > 0 && (
-                  <span className="absolute top-2 right-2 h-2.5 w-2.5 bg-red-500 rounded-full animate-pulse border border-[#1E293B]"></span>
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 bg-[#1E293B] border-[#14B8A6]/30 text-white">
-              <DropdownMenuLabel>Notificações</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-[#334155]" />
-              <div className="max-h-[300px] overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <div className="p-4 text-sm text-gray-500 text-center">Nenhuma notificação nova</div>
-                ) : (
-                  notifications.map(notif => (
-                    <DropdownMenuItem key={notif.id} className="cursor-pointer focus:bg-[#334155] p-3 flex flex-col items-start gap-1 border-b border-[#14B8A6]/30 last:border-0">
-                      <div className="flex justify-between w-full">
-                         <span className="font-semibold text-sm">{notif.title}</span>
-                         <span className="text-[10px] bg-red-900/30 text-red-300 px-1.5 py-0.5 rounded uppercase">{notif.type === 'danger' ? 'Urgente' : 'Aviso'}</span>
-                      </div>
-                      <span className="text-xs text-gray-400">{notif.desc}</span>
-                    </DropdownMenuItem>
-                  ))
-                )}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* ClawdBot Notification Bell — unifica notificações legacy + insights */}
+          <NotificationBell
+            notifications={clawdNotifications}
+            unreadCount={clawdUnread}
+            onMarkAllRead={handleMarkAllRead}
+            onAction={handleInsightAction}
+            onDismiss={handleDismiss}
+          />
 
           {/* 
             ADMIN "VER PLANOS" BUTTON
