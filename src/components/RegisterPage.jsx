@@ -88,6 +88,7 @@ const RegisterPage = () => {
         email: formData.email,
         password: formData.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/confirm-email`,
           data: {
             full_name: formData.fullName,
             phone: formData.phone,

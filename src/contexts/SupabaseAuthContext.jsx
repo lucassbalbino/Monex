@@ -39,7 +39,10 @@ export const AuthProvider = ({ children }) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options,
+      options: {
+        ...options,
+        emailRedirectTo: options?.emailRedirectTo || `${window.location.origin}/confirm-email`,
+      },
     });
 
     if (error) {

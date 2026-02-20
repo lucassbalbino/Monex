@@ -56,10 +56,16 @@ const ConfirmEmailPage = () => {
 
     setSending(true);
     try {
-      // Envia um magic link de login — alternativa prática para reenviar acesso
-      const { error } = await supabase.auth.signInWithOtp({ email });
+      // Reenvia o email de confirmação de conta usando resend do Supabase
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/confirm-email`,
+        },
+      });
       if (error) throw error;
-      toast({ title: 'Email enviado', description: `Verifique ${email}` });
+      toast({ title: 'Email reenviado', description: `Verifique ${email}. Pode levar alguns minutos.` });
     } catch (err) {
       toast({ variant: 'destructive', title: 'Erro ao reenviar', description: err.message || 'Tente novamente.' });
     } finally {
