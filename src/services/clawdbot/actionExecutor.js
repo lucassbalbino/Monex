@@ -1,12 +1,12 @@
 /**
- * ClawdBot Action Executor
+ * Monex Action Executor
  * 
- * Executa ações sugeridas pelo ClawdBot no contexto financeiro do usuário.
+ * Executa ações sugeridas pelo Monex no contexto financeiro do usuário.
  * Ponte entre insights/chat e as funções do FinancialContext.
  */
 
 /**
- * Define todas as ações que o ClawdBot pode executar
+ * Define todas as ações que o Monex pode executar
  */
 export const CLAWDBOT_ACTIONS = {
   // Limites
@@ -209,23 +209,147 @@ export function requiresConfirmation(actionType) {
 }
 
 /**
- * Parseia comandos de texto do chat para detectar intenções de ação
+ * Helpers para extração de dados da mensagem
+ */
+function extractMoney(msg) {
+  const match = msg.match(/r?\$\s*([\d.,]+)/i) || msg.match(/([\d.]+,\d{2})/);
+  if (!match) return null;
+  return match[1].replace(/\./g, '').replace(',', '.');
+}
+
+function extractName(msg, prefixes) {
+  for (const prefix of prefixes) {
+    const match = msg.match(new RegExp(`${prefix}\\s+(.+?)(?:\\s+(?:de|no valor|com|por|r\\$|$))`, 'i'));
+    if (match) return match[1].trim().replace(/["']/g, '');
+  }
+  return null;
+}
+
+function normalizeText(text) {
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+/**
+ * Parseia comandos de texto do chat para detectar intenções de ação.
+ * Retorna { detected, action, data, rawMessage } com dados pré-extraídos.
  */
 export function parseActionFromChat(message) {
-  const lowerMsg = message.toLowerCase();
+  const norm = normalizeText(message);
+  const original = message.trim();
 
-  // Padrões simples de detecção de intenção
-  const patterns = [
-    { regex: /criar?\s+(uma?\s+)?meta\s+(?:de\s+)?(.+?)(?:\s+de\s+)?r?\$?\s*([\d.,]+)/i, action: 'createGoal' },
-    { regex: /adicionar?\s+r?\$?\s*([\d.,]+)\s+(?:na|à|a)\s+meta/i, action: 'addToGoal' },
-    { regex: /pagar?\s+(?:a\s+)?d[ií]vida/i, action: 'payDebt' },
-    { regex: /criar?\s+(um?\s+)?limite/i, action: 'createLimit' },
-    { regex: /registrar?\s+(uma?\s+)?(?:despesa|gasto)/i, action: 'addTransaction' },
+  // ── Metas ──────────────────────────────────────────────
+  // "criar meta", "quero criar uma meta", "nova meta", "definir meta",
+  // "estabelecer meta", "adicionar meta", "cadastrar meta"
+  if (/(?:cri(?:ar?|e)|nov[oa]|defin(?:ir|a)|estabelec(?:er|a)|adicion(?:ar|e)|cadastr(?:ar|e))\s+(?:uma?\s+)?meta/i.test(norm)) {
+    const name = extractName(original, ['meta\\s+(?:de|para|chamada)', 'meta']);
+    const amount = extractMoney(original);
+    return {
+      detected: true,
+      action: 'createGoal',
+      data: {
+        ...(name && { name }),
+        ...(amount && { targetAmount: amount }),
+      },
+      rawMessage: original,
+    };
+  }
+
+  // "adicionar/depositar/colocar R$X na/à meta"
+  if (/(?:adicion(?:ar|e)|deposit(?:ar|e)|coloc(?:ar|a)|guard(?:ar|e)|por|bot(?:ar|e))\s+.{0,30}(?:na|a|à)\s+meta/i.test(norm)) {
+    const amount = extractMoney(original);
+    return {
+      detected: true,
+      action: 'addToGoal',
+      data: { ...(amount && { amount }) },
+      rawMessage: original,
+    };
+  }
+
+  // ── Dívidas ────────────────────────────────────────────
+  // "pagar dívida", "quitar dívida", "amortizar", "abater dívida",
+  // "registrar pagamento de dívida"
+  if (/(?:pag(?:ar|ue)|quit(?:ar|e)|amortiz(?:ar|e)|abat(?:er|a))\s+(?:uma?\s+)?(?:a\s+)?d[ií]vida/i.test(norm)
+    || /registr(?:ar|e)\s+(?:um?\s+)?pagamento\s+(?:de|da)\s+d[ií]vida/i.test(norm)
+    || /(?:quero|gostaria\s+de|preciso|vou)\s+(?:pagar|quitar)\s+(?:uma?\s+)?d[ií]vida/i.test(norm)) {
+    const amount = extractMoney(original);
+    return {
+      detected: true,
+      action: 'payDebt',
+      data: { ...(amount && { amount }) },
+      rawMessage: original,
+    };
+  }
+
+  // ── Limites ────────────────────────────────────────────
+  // "criar limite", "novo limite", "definir limite", "estabelecer limite",
+  // "ajustar limite", "alterar limite", "mudar limite", "atualizar limite"
+  if (/(?:ajust(?:ar|e)|alter(?:ar|e)|mud(?:ar|e)|atualiz(?:ar|e)|modific(?:ar|e))\s+(?:o\s+)?(?:um?\s+)?limite/i.test(norm)) {
+    const amount = extractMoney(original);
+    const category = extractName(original, ['limite\\s+(?:de|do|da|para)', 'limite']);
+    return {
+      detected: true,
+      action: 'adjustLimit',
+      data: {
+        ...(amount && { newLimit: amount }),
+        ...(category && { category }),
+      },
+      rawMessage: original,
+    };
+  }
+
+  if (/(?:cri(?:ar?|e)|nov[oa]|defin(?:ir|a)|estabelec(?:er|a)|adicion(?:ar|e)|cadastr(?:ar|e)|coloc(?:ar|a))\s+(?:um?\s+)?limite/i.test(norm)) {
+    const amount = extractMoney(original);
+    const category = extractName(original, ['limite\\s+(?:de|do|da|para)', 'limite']);
+    return {
+      detected: true,
+      action: 'createLimit',
+      data: {
+        ...(amount && { limit: amount }),
+        ...(category && { category }),
+      },
+      rawMessage: original,
+    };
+  }
+
+  // ── Transações ─────────────────────────────────────────
+  // "registrar despesa/gasto/receita/entrada/saída", "adicionar despesa",
+  // "lançar gasto", "anotar despesa", "incluir receita", "cadastrar gasto"
+  if (/(?:registr(?:ar|e)|adicion(?:ar|e)|lanc(?:ar|e)|anot(?:ar|e)|inclu(?:ir|a)|cadastr(?:ar|e)|nov[oa])\s+(?:uma?\s+)?(?:despesa|gasto|receita|entrada|saida|transac(?:ao|ão))/i.test(norm)
+    || /(?:gastei|paguei|recebi|ganhei)\s+(?:r?\$\s*)?([\d.,]+)/i.test(norm)) {
+    const amount = extractMoney(original);
+    const isIncome = /(?:receita|entrada|recebi|ganhei)/i.test(norm);
+    const description = extractName(original, ['(?:de|com|em|no|na|para)']);
+    return {
+      detected: true,
+      action: 'addTransaction',
+      data: {
+        type: isIncome ? 'income' : 'expense',
+        ...(amount && { amount }),
+        ...(description && { description }),
+      },
+      rawMessage: original,
+    };
+  }
+
+  // ── Navegação ──────────────────────────────────────────
+  // "ver/mostrar/abrir/ir para + seção"
+  const navPatterns = [
+    { regex: /(?:ver|mostr(?:ar|e)|abr(?:ir|a)|ir\s+(?:para|pra)|exib(?:ir|a)|acess(?:ar|e))\s+(?:as?\s+|os?\s+|meu[s]?\s+|minha[s]?\s+)?(?:d[ií]vidas?|d[eé]bitos?)/i, action: 'viewDebts' },
+    { regex: /(?:ver|mostr(?:ar|e)|abr(?:ir|a)|ir\s+(?:para|pra)|exib(?:ir|a)|acess(?:ar|e))\s+(?:o\s+|meu\s+)?(?:resumo|sum[aá]rio)/i, action: 'viewSummary' },
+    { regex: /(?:ver|mostr(?:ar|e)|abr(?:ir|a)|ir\s+(?:para|pra)|exib(?:ir|a)|acess(?:ar|e))\s+(?:os?\s+|meu[s]?\s+|minha[s]?\s+)?(?:gastos?|despesas?|extrato)/i, action: 'viewExpenses' },
+    { regex: /(?:ver|mostr(?:ar|e)|abr(?:ir|a)|ir\s+(?:para|pra)|exib(?:ir|a)|acess(?:ar|e))\s+(?:as?\s+|minha[s]?\s+)?(?:transac(?:ão|ões|ao|oes)|movimentac(?:ão|ões|ao|oes))/i, action: 'viewTransactions' },
+    { regex: /(?:ver|mostr(?:ar|e)|abr(?:ir|a)|ir\s+(?:para|pra)|exib(?:ir|a)|acess(?:ar|e))\s+(?:o[s]?\s+|meu[s]?\s+)?(?:cart(?:ão|ao|ões|oes)(?:\s+de\s+cr[eé]dito)?|cart[oõ]es)/i, action: 'viewCreditCard' },
+    { regex: /(?:ver|mostr(?:ar|e)|abr(?:ir|a)|ir\s+(?:para|pra)|exib(?:ir|a)|acess(?:ar|e))\s+(?:as?\s+|minha[s]?\s+)?(?:metas?|objetivos?|progresso)/i, action: 'viewGoal' },
+    { regex: /(?:ver|mostr(?:ar|e)|abr(?:ir|a)|ir\s+(?:para|pra)|exib(?:ir|a)|acess(?:ar|e))\s+(?:os?\s+|meu[s]?\s+)?(?:limites?|tetos?)/i, action: 'viewCategory' },
   ];
 
-  for (const pattern of patterns) {
-    if (pattern.regex.test(lowerMsg)) {
-      return { detected: true, action: pattern.action, rawMessage: message };
+  for (const nav of navPatterns) {
+    if (nav.regex.test(norm)) {
+      return { detected: true, action: nav.action, data: {}, rawMessage: original };
     }
   }
 

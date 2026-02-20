@@ -1,7 +1,7 @@
 /**
- * ClawdBot Notification Service
+ * Monex Notification Service
  * 
- * Gerencia notificações proativas do ClawdBot.
+ * Gerencia notificações proativas do Monex.
  * Persiste no localStorage quais insights foram vistos/descartados.
  */
 
@@ -30,7 +30,7 @@ export function saveNotifications(notifications) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
   } catch (e) {
-    logger.error('Erro ao salvar notificações ClawdBot:', e);
+    logger.error('Erro ao salvar notificações Monex:', e);
   }
 }
 
@@ -91,22 +91,38 @@ export function updateLastCheckTime() {
  * Converte insights em notificações com metadados adicionais
  */
 export function insightsToNotifications(insights, existingNotifications = []) {
-  const existingIds = new Set(existingNotifications.map(n => n.id));
-  
-  const newNotifications = insights
-    .filter(insight => !existingIds.has(insight.id))
-    .map(insight => ({
-      ...insight,
-      read: false,
-      createdAt: Date.now(),
-    }));
-
-  // Mantém notificações existentes não lidas + adiciona novas
-  // Remove notificações antigas (mais de 7 dias)
+  const existingMap = new Map(existingNotifications.map(n => [n.id, n]));
+  const freshInsightIds = new Set(insights.map(i => i.id));
   const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-  const validExisting = existingNotifications.filter(n => n.createdAt > sevenDaysAgo);
 
-  return [...newNotifications, ...validExisting];
+  // Processa cada insight: atualiza texto se já existe, ou cria nova notificação
+  const fromInsights = insights.map(insight => {
+    const existing = existingMap.get(insight.id);
+    if (existing) {
+      // Atualiza título/descrição/dados com valores frescos, preserva read + createdAt
+      return {
+        ...existing,
+        title: insight.title,
+        description: insight.description,
+        actionData: insight.actionData,
+        actionLabel: insight.actionLabel,
+        actionType: insight.actionType,
+        icon: insight.icon,
+        type: insight.type,
+      };
+    }
+    // Notificação nova
+    return { ...insight, read: false, createdAt: Date.now() };
+  });
+
+  // Mantém notificações existentes que NÃO têm mais um insight correspondente
+  // (ex: insight foi descartado mas a notificação lida ainda é válida)
+  // Remove notificações antigas (mais de 7 dias)
+  const orphanNotifications = existingNotifications.filter(
+    n => !freshInsightIds.has(n.id) && n.createdAt > sevenDaysAgo
+  );
+
+  return [...fromInsights, ...orphanNotifications];
 }
 
 /**

@@ -267,7 +267,7 @@ function App() {
                     </main>
                   </div>
 
-                  {/* ClawdBot Action Confirmation — renderizado uma única vez */}
+                  {/* Monex Action Confirmation — renderizado uma única vez */}
                   <ActionConfirmation />
                 </div>
               </ClawdBotProvider>

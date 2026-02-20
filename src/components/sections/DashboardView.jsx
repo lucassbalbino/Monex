@@ -21,7 +21,7 @@ const DashboardView = () => {
   } = useFinancialData();
   const { toast } = useToast();
 
-  // ClawdBot — usa contexto centralizado (instância única compartilhada)
+  // Monex — usa contexto centralizado (instância única compartilhada)
   const {
     insights,
     handleInsightAction,
@@ -177,21 +177,19 @@ const DashboardView = () => {
         }} className="space-y-6">
           <QuickActions />
           
-          {/* ClawdBot Proactive Insights */}
-          {insights.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.4 }}
-              className="bg-[#1E293B] rounded-xl border border-[#334155] p-4"
-            >
-              <ProactiveInsights
-                insights={insights.slice(0, 4)}
-                onAction={handleInsightAction}
-                onDismiss={handleDismiss}
-              />
-            </motion.div>
-          )}
+          {/* Monex Proactive Insights */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+            className="bg-[#1E293B] rounded-xl border border-[#334155] p-4"
+          >
+            <ProactiveInsights
+              insights={insights.slice(0, 6)}
+              onAction={handleInsightAction}
+              onDismiss={handleDismiss}
+            />
+          </motion.div>
         </motion.div>
 
         <motion.div initial={{

@@ -31,7 +31,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ClawdBot — usa o contexto centralizado (instância única)
+  // Monex — usa o contexto centralizado (instância única)
   const {
     notifications: clawdNotifications,
     unreadCount: clawdUnread,
@@ -204,7 +204,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
           transition={{ duration: 0.5 }}
           className="flex items-center gap-2 md:gap-4"
         >
-          {/* ClawdBot Notification Bell — unifica notificações legacy + insights */}
+          {/* Monex Notification Bell — unifica notificações legacy + insights */}
           <NotificationBell
             notifications={clawdNotifications}
             unreadCount={clawdUnread}

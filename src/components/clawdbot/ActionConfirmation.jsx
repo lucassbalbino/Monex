@@ -107,7 +107,7 @@ const ActionConfirmation = () => {
               <Bot className="h-5 w-5 text-white" />
             </div>
             <div>
-              <DialogTitle className="text-lg">ClawdBot - Confirmar Ação</DialogTitle>
+              <DialogTitle className="text-lg">Monex - Confirmar Ação</DialogTitle>
               <DialogDescription className="text-gray-400 text-xs mt-0.5">
                 Revise os dados antes de confirmar
               </DialogDescription>

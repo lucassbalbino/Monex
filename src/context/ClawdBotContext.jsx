@@ -1,9 +1,9 @@
 /**
- * ClawdBot Context Provider
+ * Monex Context Provider
  * 
- * Contexto centralizado que garante uma única instância do ClawdBot
+ * Contexto centralizado que garante uma única instância do Monex
  * compartilhada entre Header, Dashboard, Chat e qualquer componente.
- * Resolve o problema de instâncias duplicadas do useClawdBot.
+ * Resolve o problema de instâncias duplicadas do useMonex.
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
@@ -87,7 +87,7 @@ export function ClawdBotProvider({ children, setActiveSection }) {
     });
 
     const filtered = filterDismissedInsights(allInsights, dismissedIds);
-    const top = getTopInsights(filtered, 10);
+    const top = getTopInsights(filtered, 15);
     
     setInsights(top);
 
@@ -190,13 +190,23 @@ export function ClawdBotProvider({ children, setActiveSection }) {
     return parseActionFromChat(message);
   }, []);
 
+  const ACTION_FRIENDLY_NAMES = {
+    createGoal: { title: 'Criar Nova Meta', desc: 'Preencha os dados da meta que você quer criar.' },
+    addToGoal: { title: 'Depositar na Meta', desc: 'Informe o valor a depositar na meta.' },
+    payDebt: { title: 'Pagar Dívida', desc: 'Informe os dados do pagamento.' },
+    createLimit: { title: 'Criar Limite de Gastos', desc: 'Defina a categoria e o valor do limite.' },
+    adjustLimit: { title: 'Ajustar Limite', desc: 'Altere o valor do limite existente.' },
+    addTransaction: { title: 'Registrar Transação', desc: 'Preencha os dados da transação.' },
+  };
+
   const triggerActionFromChat = useCallback((actionType, actionData) => {
     if (requiresConfirmation(actionType)) {
+      const friendly = ACTION_FRIENDLY_NAMES[actionType] || { title: actionType, desc: '' };
       setPendingAction({
         type: actionType,
         data: actionData || {},
-        title: `Ação via Chat: ${actionType}`,
-        description: 'Ação detectada na conversa com o ClawdBot',
+        title: friendly.title,
+        description: friendly.desc,
         actionLabel: 'Confirmar',
       });
     } else {
@@ -238,7 +248,7 @@ export function ClawdBotProvider({ children, setActiveSection }) {
 export function useClawdBotContext() {
   const context = useContext(ClawdBotContext);
   if (!context) {
-    throw new Error('useClawdBotContext must be used within a ClawdBotProvider');
+    throw new Error('useClawdBotContext must be used within a MonexProvider');
   }
   return context;
 }

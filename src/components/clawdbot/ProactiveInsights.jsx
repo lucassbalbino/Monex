@@ -128,7 +128,7 @@ const ProactiveInsights = ({ insights = [], onAction, onDismiss, className = '' 
         </div>
         <div>
           <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            ClawdBot Insights
+            Monex Insights
             {insights.length > 0 && (
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#14B8A6] opacity-75"></span>

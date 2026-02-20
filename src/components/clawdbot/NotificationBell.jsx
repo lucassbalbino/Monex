@@ -71,7 +71,7 @@ const NotificationBell = ({
         size="icon"
         onClick={handleToggle}
         className="hover:bg-[#334155] transition-colors relative group"
-        title="ClawdBot Insights"
+        title="Monex Insights"
       >
         <Bot className="h-5 w-5 text-gray-300 group-hover:text-[#14B8A6] transition-colors" />
         
@@ -108,7 +108,7 @@ const NotificationBell = ({
                 <div className="bg-gradient-to-tr from-[#14B8A6] to-[#2DD4BF] p-1.5 rounded-lg">
                   <Bot className="h-3.5 w-3.5 text-white" />
                 </div>
-                <span className="text-sm font-bold text-white">ClawdBot</span>
+                <span className="text-sm font-bold text-white">Monex</span>
                 {unreadCount > 0 && (
                   <span className="text-[10px] bg-[#14B8A6]/20 text-[#14B8A6] px-1.5 py-0.5 rounded-full font-medium">
                     {unreadCount} {unreadCount === 1 ? 'novo' : 'novos'}
@@ -144,7 +144,7 @@ const NotificationBell = ({
                 <div className="p-6 text-center">
                   <Bot className="h-10 w-10 text-gray-600 mx-auto mb-2" />
                   <p className="text-sm text-gray-500">Nenhum insight no momento</p>
-                  <p className="text-xs text-gray-600 mt-1">O ClawdBot está analisando suas finanças...</p>
+                  <p className="text-xs text-gray-600 mt-1">O Monex está analisando suas finanças...</p>
                 </div>
               ) : (
                 <div className="py-1">
@@ -206,7 +206,7 @@ const NotificationBell = ({
             {displayNotifications.length > 0 && (
               <div className="px-4 py-2 border-t border-[#334155] bg-[#0F172A]/50">
                 <p className="text-[10px] text-gray-600 text-center">
-                  ClawdBot analisa suas finanças continuamente
+                  Monex analisa suas finanças continuamente
                 </p>
               </div>
             )}

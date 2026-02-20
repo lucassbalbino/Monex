@@ -21,12 +21,12 @@ const ChatInterface = ({ className, compact = false }) => {
     userProfile
   } = useFinancialData();
 
-  // ClawdBot — contexto centralizado para detecção de ações no chat
+  // Monex — contexto centralizado para detecção de ações no chat
   const { detectChatAction, triggerActionFromChat } = useClawdBotContext();
 
   const [userId, setUserId] = useState(null);
   const [messages, setMessages] = useState([
-    { id: 1, type: 'bot', text: 'Olá! Sou o ClawdBot, seu assistente financeiro inteligente. Analiso seus dados em tempo real para te dar as melhores dicas. Posso também executar ações como criar metas, registrar transações e muito mais. Como posso ajudar hoje?' }
+    { id: 1, type: 'bot', text: 'Olá! Sou o Monex, seu assistente financeiro inteligente. Analiso seus dados em tempo real para te dar as melhores dicas. Posso também executar ações como criar metas, registrar transações e muito mais. Como posso ajudar hoje?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -128,12 +128,12 @@ const ChatInterface = ({ className, compact = false }) => {
       })),
       alertas: [], // Array vazio por enquanto, pode implementar depois
       dataAtual: new Date().toISOString().split('T')[0],
-      clawdbot: {
+      monex: {
         capabilities: [
           'criar_meta', 'ajustar_limite', 'registrar_transacao',
           'pagar_divida', 'analisar_gastos', 'sugerir_economia'
         ],
-        instructions: 'Você é o ClawdBot, assistente financeiro proativo do Monex. Quando o usuário pedir para executar uma ação (criar meta, registrar gasto, etc.), responda confirmando a ação e os dados. Seja proativo em sugerir melhorias financeiras.'
+        instructions: 'Você é o Monex, assistente financeiro proativo. Quando o usuário pedir para executar uma ação (criar meta, registrar gasto, etc.), responda confirmando a ação e os dados. Seja proativo em sugerir melhorias financeiras.'
       }
     };
   };
@@ -231,11 +231,11 @@ const ChatInterface = ({ className, compact = false }) => {
     // Detecta se o usuário quer executar uma ação (criar meta, pagar dívida, etc.)
     const actionDetection = detectChatAction(query);
     if (actionDetection.detected) {
-      triggerActionFromChat(actionDetection.action, {});
+      triggerActionFromChat(actionDetection.action, actionDetection.data || {});
       setMessages(prev => [...prev, { 
         id: Date.now(), 
         type: 'bot', 
-        text: `Detectei que você quer executar uma ação. Abri o formulário de confirmação para você preencher os dados. Enquanto isso, vou consultar minha base para te dar mais contexto...`
+        text: `Entendi! Abri o formulário para você confirmar a ação. Preencha ou ajuste os dados e confirme. Enquanto isso, vou buscar mais informações para te ajudar...`
       }]);
     }
 
@@ -252,7 +252,7 @@ const ChatInterface = ({ className, compact = false }) => {
           </div>
           <div>
             <span className="font-bold text-white text-lg flex items-center gap-2">
-              ClawdBot
+              Monex
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#14B8A6]/10 border border-[#14B8A6]/20">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#14B8A6] opacity-75"></span>
@@ -369,7 +369,7 @@ const ChatInterface = ({ className, compact = false }) => {
         </div>
         <div className="text-center mt-2">
             <p className="text-[10px] text-slate-600">
-                ClawdBot pode executar ações e cometer erros. Verifique informações importantes.
+                Monex pode executar ações e cometer erros. Verifique informações importantes.
             </p>
         </div>
       </div>
