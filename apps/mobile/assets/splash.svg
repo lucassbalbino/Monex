@@ -1,0 +1,7 @@
+<!-- SVG placeholder — substitua por splash real -->
+<svg width="1284" height="2778" viewBox="0 0 1284 2778" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1284" height="2778" fill="#0F172A"/>
+  <rect x="492" y="1239" width="300" height="300" rx="60" fill="#14B8A6"/>
+  <text x="642" y="1430" font-family="Arial, sans-serif" font-size="180" font-weight="bold" fill="#0F172A" text-anchor="middle">M</text>
+  <text x="642" y="1650" font-family="Arial, sans-serif" font-size="60" font-weight="bold" fill="#14B8A6" text-anchor="middle">Monex</text>
+</svg>

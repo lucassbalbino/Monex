@@ -1,0 +1,13 @@
+{
+  "name": "@monex/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "build": "echo 'shared package ready'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.90.1",
+    "date-fns": "^3.3.1"
+  }
+}
