@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Edit2, UploadCloud, CreditCard as CardIcon, Calendar, DollarSign, Lock, FileText } from 'lucide-react';
+import { Plus, Trash2, Edit2, UploadCloud, CreditCard as CardIcon, Calendar, DollarSign, Lock, FileText, AlertTriangle, CheckCircle, BanknoteIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -114,6 +114,64 @@ const CreditCardView = () => {
     return BANKS.find(b => b.name === bankName) || BANKS[BANKS.length - 1];
   };
 
+  /**
+   * Verifica o status de vencimento do cartão.
+   * Retorna: 'overdue' (venceu), 'today' (vence hoje), 'soon' (vence em até 3 dias), null
+   */
+  const getDueStatus = (dueDay) => {
+    if (!dueDay) return null;
+    const today = new Date();
+    const currentDay = today.getDate();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const due = parseInt(dueDay);
+
+    // Data de vencimento deste mês
+    const dueDateThisMonth = new Date(currentYear, currentMonth, due);
+    const diffTime = dueDateThisMonth.getTime() - today.setHours(0, 0, 0, 0);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) return 'overdue';   // já venceu
+    if (diffDays === 0) return 'today';    // vence hoje
+    if (diffDays <= 3) return 'soon';      // vence em até 3 dias
+    return null;
+  };
+
+  const getDueLabel = (status, dueDay) => {
+    if (status === 'overdue') return `Fatura vencida! (dia ${dueDay})`;
+    if (status === 'today') return `Fatura vence hoje! (dia ${dueDay})`;
+    if (status === 'soon') return `Fatura vence em breve (dia ${dueDay})`;
+    return '';
+  };
+
+  const [payingCardId, setPayingCardId] = useState(null);
+
+  const handlePayInvoice = (card) => {
+    if (!card.currentBill || card.currentBill <= 0) {
+      toast({ title: "Sem fatura", description: "Este cartão não possui fatura em aberto.", variant: "destructive" });
+      return;
+    }
+
+    setPayingCardId(card.id);
+
+    // Zerar a fatura (confirmar pagamento)
+    updateCreditCard(card.id, { currentBill: 0 });
+    setCreditCards(prev => {
+      const updated = prev.map(c => c.id === card.id ? { ...c, currentBill: 0 } : c);
+      localStorage.setItem('monex_credit_cards', JSON.stringify(updated));
+      return updated;
+    });
+
+    toast({
+      title: "Pagamento confirmado! ✓",
+      description: `Fatura de ${formatCurrency(card.currentBill)} do cartão ${card.name} foi paga.`,
+      className: "bg-green-600 text-white border-none",
+      duration: 5000,
+    });
+
+    setTimeout(() => setPayingCardId(null), 1500);
+  };
+
   return (
     <div className="space-y-8 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -214,6 +272,8 @@ const CreditCardView = () => {
                     const bankStyle = getBankStyle(card.bank);
                     const available = card.limit - (card.currentBill || 0);
                     const usagePercent = card.limit > 0 ? (card.currentBill / card.limit) * 100 : 0;
+                    const dueStatus = getDueStatus(card.dueDate);
+                    const hasBill = card.currentBill > 0;
 
                     return (
                         <motion.div
@@ -223,6 +283,55 @@ const CreditCardView = () => {
                             exit={{ opacity: 0, scale: 0.9 }}
                             className="group relative"
                         >
+                            {/* ─── Alerta de vencimento ─────────────────────── */}
+                            {dueStatus && hasBill && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className={`mb-3 rounded-xl p-3 flex items-center justify-between gap-3 border ${
+                                  dueStatus === 'overdue'
+                                    ? 'bg-red-500/10 border-red-500/30'
+                                    : dueStatus === 'today'
+                                    ? 'bg-amber-500/10 border-amber-500/30'
+                                    : 'bg-yellow-500/10 border-yellow-500/30'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <AlertTriangle className={`h-5 w-5 shrink-0 ${
+                                    dueStatus === 'overdue' ? 'text-red-400' : 'text-amber-400'
+                                  }`} />
+                                  <div className="min-w-0">
+                                    <p className={`text-sm font-medium ${
+                                      dueStatus === 'overdue' ? 'text-red-300' : 'text-amber-300'
+                                    }`}>
+                                      {getDueLabel(dueStatus, card.dueDate)}
+                                    </p>
+                                    <p className="text-xs text-gray-400 mt-0.5">
+                                      Valor: <strong className="text-white">{formatCurrency(card.currentBill)}</strong>
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => handlePayInvoice(card)}
+                                  disabled={payingCardId === card.id}
+                                  className={`shrink-0 text-white text-xs px-3 ${
+                                    dueStatus === 'overdue'
+                                      ? 'bg-red-600 hover:bg-red-700'
+                                      : 'bg-amber-600 hover:bg-amber-700'
+                                  }`}
+                                >
+                                  {payingCardId === card.id ? (
+                                    <CheckCircle className="h-4 w-4" />
+                                  ) : (
+                                    <>
+                                      <BanknoteIcon className="h-3.5 w-3.5 mr-1.5" />
+                                      Pagar
+                                    </>
+                                  )}
+                                </Button>
+                              </motion.div>
+                            )}
                             {/* Realistic Card UI */}
                             <div className={`relative h-56 rounded-2xl p-6 text-white shadow-xl overflow-hidden transition-transform duration-300 hover:-translate-y-2 ${bankStyle.color}`}>
                                 {/* Background Patterns */}
