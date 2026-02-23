@@ -88,6 +88,7 @@ const CheckoutSuccessPage = () => {
                 name: data.name,
                 stripeCustomerId: data.customerId,
                 subscriptionId: data.subscriptionId,
+                planName: data.planName || '',
                 planType: 'premium' 
               }
             });

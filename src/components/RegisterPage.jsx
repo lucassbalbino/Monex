@@ -115,7 +115,11 @@ const RegisterPage = () => {
           updated_at: new Date().toISOString(),
           // If payment was already verified via CheckoutSuccessPage, activate subscription
           ...(hasVerifiedPayment && {
-            subscription_status: 'active'
+            subscription_status: 'active',
+            stripe_customer_id: stateData.stripeCustomerId,
+            stripe_subscription_id: stateData.subscriptionId,
+            current_plan: stateData.planName || selectedPlan?.name || 'Premium',
+            cancel_at_period_end: false,
           })
         };
 
