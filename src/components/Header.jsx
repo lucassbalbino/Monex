@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from '@/lib/customSupabaseClient';
 import NotificationBell from '@/components/clawdbot/NotificationBell';
 import { useClawdBotContext } from '@/context/ClawdBotContext';
+import SubscriptionManager from '@/components/SubscriptionManager';
 
 const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
   const { toast } = useToast();
@@ -264,8 +265,9 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
           </DialogHeader>
           
           <Tabs defaultValue="profile" className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-2 bg-[#0F172A]">
+            <TabsList className="grid w-full grid-cols-3 bg-[#0F172A]">
               <TabsTrigger value="profile">Perfil</TabsTrigger>
+              <TabsTrigger value="subscription">Assinatura</TabsTrigger>
               <TabsTrigger value="security">Segurança</TabsTrigger>
             </TabsList>
             
@@ -299,6 +301,10 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
               </Button>
             </TabsContent>
             
+            <TabsContent value="subscription" className="py-4">
+              <SubscriptionManager />
+            </TabsContent>
+
             <TabsContent value="security" className="space-y-4 py-4">
               {passwordStep === 1 ? (
                 /* Step 1: Verify current password */

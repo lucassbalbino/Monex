@@ -54,9 +54,19 @@ const CheckoutSuccessPage = () => {
           if (authSession) {
             // CASE A: User was already logged in - update subscription status in database
             try {
+              const updateData = {
+                subscription_status: 'active',
+                updated_at: new Date().toISOString(),
+                cancel_at_period_end: false,
+              };
+              // Salvar IDs do Stripe para gerenciamento futuro (cancelamento, etc.)
+              if (data.customerId) updateData.stripe_customer_id = data.customerId;
+              if (data.subscriptionId) updateData.stripe_subscription_id = data.subscriptionId;
+              if (data.planName) updateData.current_plan = data.planName;
+
               await supabase
                 .from('profiles')
-                .update({ subscription_status: 'active', updated_at: new Date().toISOString() })
+                .update(updateData)
                 .eq('id', authSession.user.id);
             } catch (updateError) {
               logger.error('Error updating subscription status:', updateError);

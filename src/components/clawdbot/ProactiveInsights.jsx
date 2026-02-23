@@ -58,12 +58,13 @@ const TYPE_STYLES = {
   },
 };
 
-const InsightCard = ({ insight, onAction, onDismiss }) => {
+const InsightCard = React.forwardRef(({ insight, onAction, onDismiss }, ref) => {
   const style = TYPE_STYLES[insight.type] || TYPE_STYLES[INSIGHT_TYPES.ANALYSIS];
   const IconComponent = ICON_MAP[insight.icon] || Sparkles;
 
   return (
     <motion.div
+      ref={ref}
       layout
       initial={{ opacity: 0, scale: 0.95, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -116,7 +117,8 @@ const InsightCard = ({ insight, onAction, onDismiss }) => {
       </div>
     </motion.div>
   );
-};
+});
+InsightCard.displayName = 'InsightCard';
 
 const ProactiveInsights = ({ insights = [], onAction, onDismiss, className = '' }) => {
   return (
