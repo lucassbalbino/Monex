@@ -5,15 +5,15 @@
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Detecta ambiente (web usa import.meta.env, mobile usa process.env ou expo constants)
+// Detecta ambiente (web usa import.meta.env, mobile usa process.env)
+// Nota: import.meta não é suportado pelo Hermes (React Native),
+// então usamos apenas process.env que funciona em ambas plataformas.
+// No Expo, variáveis EXPO_PUBLIC_* são injetadas em process.env.
+// No Vite, variáveis são disponibilizadas via import.meta.env (tratado no web app).
 const getEnvVar = (key) => {
-  // Expo / React Native
+  // process.env funciona tanto no Expo (EXPO_PUBLIC_*) quanto em Node
   if (typeof process !== 'undefined' && process.env && process.env[key]) {
     return process.env[key];
-  }
-  // Vite (web)
-  if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env[key]) {
-    return import.meta.env[key];
   }
   return undefined;
 };

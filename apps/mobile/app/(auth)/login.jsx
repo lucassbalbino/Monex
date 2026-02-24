@@ -36,6 +36,9 @@ export default function LoginScreen() {
       const { error } = await signIn(email, password);
       if (error) {
         Alert.alert('Erro de Login', error.message || 'Email ou senha inválidos');
+      } else {
+        // Navega para o dashboard após login
+        router.replace('/(tabs)');
       }
     } catch (e) {
       Alert.alert('Erro', 'Ocorreu um erro inesperado');
