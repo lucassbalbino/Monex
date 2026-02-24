@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       password,
       options: {
         ...options,
-        emailRedirectTo: options?.emailRedirectTo || `${window.location.origin}/confirm-email`,
+        emailRedirectTo: options?.emailRedirectTo || 'https://monexapp.com.br/confirm-email',
       },
     });
 
@@ -89,8 +89,18 @@ export const AuthProvider = ({ children }) => {
 
   const sendPasswordReset = useCallback(async (email) => {
     try {
-      const redirectTo = `${window.location.origin}/reset-password`;
+      const redirectTo = 'https://monexapp.com.br/reset-password';
+      // Log request
+      console.log('supabase.resetPasswordForEmail.request', {
+        timestamp: new Date().toISOString(),
+        email,
+        redirectTo,
+      });
+
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+
+      // Log response
+      console.log('supabase.resetPasswordForEmail.response', { timestamp: new Date().toISOString(), data, error });
 
       if (error) {
         toast({
@@ -109,6 +119,7 @@ export const AuthProvider = ({ children }) => {
 
       return { data };
     } catch (err) {
+      console.log('supabase.resetPasswordForEmail.error', { timestamp: new Date().toISOString(), message: err?.message, err });
       toast({
         variant: "destructive",
         title: "Erro",

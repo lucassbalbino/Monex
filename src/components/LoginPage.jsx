@@ -42,7 +42,20 @@ const LoginPage = () => {
       }
 
       if (user) {
-        // 2. Check Subscription Status
+        // 2. Check if email is confirmed
+        if (!user.email_confirmed_at) {
+          // Email não confirmado — redireciona para página de confirmação
+          await supabase.auth.signOut();
+          toast({
+            title: "Email não confirmado",
+            description: "Verifique sua caixa de entrada e confirme seu email antes de fazer login.",
+            className: "bg-yellow-600 text-white border-none"
+          });
+          navigate('/confirm-email', { state: { email: formData.email } });
+          return;
+        }
+
+        // 3. Check Subscription Status
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('subscription_status')

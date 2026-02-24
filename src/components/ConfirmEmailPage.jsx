@@ -56,17 +56,51 @@ const ConfirmEmailPage = () => {
 
     setSending(true);
     try {
+      // Log request
+      const emailRedirectTo = 'https://monexapp.com.br/confirm-email';
+      console.log('supabase.resend.request', {
+        timestamp: new Date().toISOString(),
+        email,
+        payload: {
+          type: 'signup',
+          email,
+          options: { emailRedirectTo },
+        },
+      });
+
       // Reenvia o email de confirmação de conta usando resend do Supabase
-      const { error } = await supabase.auth.resend({
+      const { data, error } = await supabase.auth.resend({
         type: 'signup',
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/confirm-email`,
+          emailRedirectTo,
         },
       });
+
+      // Log response — inclui message_id para confirmar envio real
+      console.log('supabase.resend.response', { 
+        timestamp: new Date().toISOString(), 
+        data: JSON.stringify(data), 
+        error: error ? JSON.stringify(error) : null,
+        message_id: data?.message_id || 'NENHUM — email NÃO foi enviado',
+      });
+
       if (error) throw error;
+
+      // Se não há message_id, o Supabase aceitou mas não enviou (usuário já confirmado ou rate limit)
+      if (!data?.message_id) {
+        console.warn('⚠️ Supabase retornou 200 mas sem message_id. Possíveis causas: usuário já confirmado, rate limit, ou "Confirm email" desativado nas settings.');
+        toast({ 
+          variant: 'destructive', 
+          title: 'Email pode não ter sido enviado', 
+          description: 'O servidor aceitou, mas não confirmou o envio. Verifique se o email já foi confirmado ou tente novamente em alguns minutos.' 
+        });
+        return;
+      }
+
       toast({ title: 'Email reenviado', description: `Verifique ${email}. Pode levar alguns minutos.` });
     } catch (err) {
+      console.log('supabase.resend.error', { timestamp: new Date().toISOString(), message: err?.message, err });
       toast({ variant: 'destructive', title: 'Erro ao reenviar', description: err.message || 'Tente novamente.' });
     } finally {
       setSending(false);

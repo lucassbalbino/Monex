@@ -84,23 +84,35 @@ const RegisterPage = () => {
 
     try {
       // 1. Sign Up
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const signUpPayload = {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/confirm-email`,
+          emailRedirectTo: 'https://monexapp.com.br/confirm-email',
           data: {
             full_name: formData.fullName,
             phone: formData.phone,
           }
         }
-      });
+      };
+
+      console.log('supabase.signUp.request', { timestamp: new Date().toISOString(), payload: { ...signUpPayload, password: 'REDACTED' } });
+
+      const { data, error: signUpError } = await supabase.auth.signUp(signUpPayload);
+
+      console.log('supabase.signUp.response', { timestamp: new Date().toISOString(), data, signUpError });
 
       if (signUpError) {
         if (signUpError.message.toLowerCase().includes("registered") || signUpError.status === 422) {
            throw new Error("Este email já possui cadastro. Faça login.");
         }
         throw signUpError;
+      }
+
+      // Detecta email duplicado: Supabase retorna user "fake" com identities vazio
+      // quando o email já existe e "Confirm email" está ativado
+      if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+        throw new Error("Este email já possui cadastro. Faça login ou use a opção 'Esqueci minha senha'.");
       }
 
       if (data.user) {
