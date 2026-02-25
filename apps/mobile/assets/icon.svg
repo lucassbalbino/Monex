@@ -1,0 +1,6 @@
+<!-- SVG placeholder — substitua por logo real -->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" rx="200" fill="#0F172A"/>
+  <rect x="262" y="262" width="500" height="500" rx="100" fill="#14B8A6"/>
+  <text x="512" y="560" font-family="Arial, sans-serif" font-size="300" font-weight="bold" fill="#0F172A" text-anchor="middle">M</text>
+</svg>
