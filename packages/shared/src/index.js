@@ -10,3 +10,19 @@ export { getClientData, getClientCreditCard, getDebts, getExpenses, getFinancial
 export { formatDataForLLM } from './services/formatDataForLLM';
 export { logger } from './utils/logger';
 export { MENU_ITEMS, FIXED_GOALS } from './constants';
+
+
+// Open Finance (Pluggy)
+export {
+  createConnectToken, registerConnection, removeConnection,
+  syncAllConnections, syncConnection,
+  getConnections, getAccounts, getTransactions,
+  getCreditCards, getCreditCardBills, getLoans,
+  getOpenFinanceSummary,
+} from './services/pluggyService';
+export {
+  getAccountTypeLabel, getInstitutionColor,
+  getTransactionCategory, formatTransactionAmount,
+  isIncome, getConnectionStatus,
+  groupTransactionsByDate, groupAccountsByInstitution,
+} from './utils/openFinanceHelpers';
