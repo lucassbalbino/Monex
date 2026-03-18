@@ -191,7 +191,7 @@ const Header = ({ onShowLanding, onToggleSidebar, isSidebarOpen }) => {
             onClick={() => window.location.href = '/'}
           >
             <img 
-              src="https://horizons-cdn.hostinger.com/26fb3ff4-2941-4291-a8b9-2757b63ade4c/4d34c56b0a0a4f437b2e1b698d3b5297.jpg" 
+              src="/monex-logo.svg" 
               alt="Logo Monex" 
               className="h-10 w-auto"
             />
