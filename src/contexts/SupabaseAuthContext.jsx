@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 
 import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
+import { logger } from '@/lib/logger';
 
 const AuthContext = createContext(undefined);
 
@@ -11,29 +12,104 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
+  const [profileRole, setProfileRole] = useState(null);
+  const [subscriptionChecked, setSubscriptionChecked] = useState(false);
 
-  const handleSession = useCallback(async (session) => {
-    setSession(session);
-    setUser(session?.user ?? null);
-    setLoading(false);
+  const initRef = useRef(false);
+  const currentUserIdRef = useRef(null);
+
+  const fetchProfile = useCallback(async (userId) => {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('subscription_status, role')
+        .eq('id', userId)
+        .single();
+
+      setSubscriptionStatus(profile?.subscription_status ?? null);
+      setProfileRole(profile?.role ?? null);
+      setSubscriptionChecked(true);
+    } catch {
+      setSubscriptionChecked(true);
+    }
   }, []);
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      handleSession(session);
+    if (initRef.current) return;
+    initRef.current = true;
+
+    let mounted = true;
+
+    const init = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (!mounted) return;
+
+        if (error) {
+          setSession(null);
+          setLoading(false);
+          return;
+        }
+
+        const currentSession = data?.session;
+
+        if (currentSession?.user?.id) {
+          currentUserIdRef.current = currentSession.user.id;
+          setSession(currentSession);
+          setUser(currentSession.user);
+          await fetchProfile(currentSession.user.id);
+        } else {
+          setSession(null);
+          setUser(null);
+          setSubscriptionChecked(true);
+        }
+      } catch {
+        if (mounted) setSession(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
     };
 
-    getSession();
+    init();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        handleSession(session);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (!mounted) return;
+      if (event === 'INITIAL_SESSION') return;
+
+      if (event === 'PASSWORD_RECOVERY') {
+        currentUserIdRef.current = newSession?.user?.id ?? null;
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        return;
       }
-    );
 
-    return () => subscription.unsubscribe();
-  }, [handleSession]);
+      if (event === 'SIGNED_OUT') {
+        currentUserIdRef.current = null;
+        setSession(null);
+        setUser(null);
+        setSubscriptionStatus(null);
+        setProfileRole(null);
+        setSubscriptionChecked(false);
+      } else if (event === 'SIGNED_IN' && newSession?.user?.id) {
+        if (currentUserIdRef.current === newSession.user.id) {
+          setSession(newSession);
+          setUser(newSession.user);
+          return;
+        }
+        currentUserIdRef.current = newSession.user.id;
+        setSession(newSession);
+        setUser(newSession.user);
+        setSubscriptionChecked(false);
+        fetchProfile(newSession.user.id);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchProfile]);
 
   const signUp = useCallback(async (email, password, options) => {
     const { error } = await supabase.auth.signUp({
@@ -48,8 +124,8 @@ export const AuthProvider = ({ children }) => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Sign up Failed",
-        description: error.message || "Something went wrong",
+        title: "Falha no cadastro",
+        description: error.message || "Algo deu errado",
       });
     }
 
@@ -65,8 +141,8 @@ export const AuthProvider = ({ children }) => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Sign in Failed",
-        description: error.message || "Something went wrong",
+        title: "Falha no login",
+        description: error.message || "Algo deu errado",
       });
     }
 
@@ -79,8 +155,8 @@ export const AuthProvider = ({ children }) => {
     if (error) {
       toast({
         variant: "destructive",
-        title: "Sign out Failed",
-        description: error.message || "Something went wrong",
+        title: "Falha ao sair",
+        description: error.message || "Algo deu errado",
       });
     }
 
@@ -90,17 +166,7 @@ export const AuthProvider = ({ children }) => {
   const sendPasswordReset = useCallback(async (email) => {
     try {
       const redirectTo = 'https://monexapp.com.br/reset-password';
-      // Log request
-      console.log('supabase.resetPasswordForEmail.request', {
-        timestamp: new Date().toISOString(),
-        email,
-        redirectTo,
-      });
-
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-
-      // Log response
-      console.log('supabase.resetPasswordForEmail.response', { timestamp: new Date().toISOString(), data, error });
 
       if (error) {
         toast({
@@ -119,7 +185,7 @@ export const AuthProvider = ({ children }) => {
 
       return { data };
     } catch (err) {
-      console.log('supabase.resetPasswordForEmail.error', { timestamp: new Date().toISOString(), message: err?.message, err });
+      logger.error('Password reset error:', err);
       toast({
         variant: "destructive",
         title: "Erro",
@@ -129,15 +195,21 @@ export const AuthProvider = ({ children }) => {
     }
   }, [toast]);
 
+  const userId = user?.id ?? null;
+
   const value = useMemo(() => ({
     user,
+    userId,
     session,
     loading,
+    subscriptionStatus,
+    profileRole,
+    subscriptionChecked,
     signUp,
     signIn,
     signOut,
     sendPasswordReset,
-  }), [user, session, loading, signUp, signIn, signOut, sendPasswordReset]);
+  }), [user, userId, session, loading, subscriptionStatus, profileRole, subscriptionChecked, signUp, signIn, signOut, sendPasswordReset]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

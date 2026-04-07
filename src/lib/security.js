@@ -1,7 +1,10 @@
 // src/lib/security.js
 // Security utilities and configurations
+// NOTA: O rate limiting abaixo é client-side (in-memory) e serve apenas como
+// proteção superficial na camada do navegador. Para proteção real contra abuso,
+// implemente rate limiting server-side (ex: Supabase Edge Functions, Redis, etc.).
 
-// Rate limiting configuration
+// Rate limiting configuration (client-side only — não substitui proteção server-side)
 export const rateLimitConfig = {
   // Maximum requests per minute per IP
   maxRequestsPerMinute: 60,
@@ -44,7 +47,7 @@ export const securityUtils = {
     return suspiciousPatterns.some(pattern => pattern.test(input));
   },
 
-  // Rate limiting storage (in-memory for demo, use Redis in production)
+  // Rate limiting storage (client-side — para proteção real, use Redis ou similar no servidor)
   rateLimitStore: new Map(),
 
   // Check if request should be rate limited

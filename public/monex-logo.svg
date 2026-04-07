@@ -1,4 +1,5 @@
-<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="120" height="120" rx="24" fill="#14B8A6"/>
-  <text x="60" y="82" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#0F172A" text-anchor="middle">M</text>
+  <!-- Letter M as paths -->
+  <path d="M32 88V32h10.5l17.5 38 17.5-38H88v56h-10V48L62 84h-4L42 48v40H32z" fill="#0F172A"/>
 </svg>

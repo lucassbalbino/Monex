@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -20,24 +20,17 @@ import { Toaster } from '@/components/ui/toaster';
 import { FinancialProvider } from '@/context/FinancialContext';
 import { ClawdBotProvider } from '@/context/ClawdBotContext';
 import ActionConfirmation from '@/components/clawdbot/ActionConfirmation';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/lib/customSupabaseClient';
 import { Loader2 } from 'lucide-react';
 
 
 function App() {
   const appNavigate = useNavigate();
-  const [session, setSession] = useState(null);
-  const [subscriptionStatus, setSubscriptionStatus] = useState(null); 
-  const [profileRole, setProfileRole] = useState(null);
-  const [subscriptionChecked, setSubscriptionChecked] = useState(false);
+  const { session, loading, subscriptionStatus, profileRole, subscriptionChecked } = useAuth();
+
   const [activeSection, setActiveSection] = useState('dashboard');
-  const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  
-  // Ref para prevenir múltiplas inicializações
-  const initRef = useRef(false);
-  // Ref para acessar o userId atual dentro do callback de auth (evita stale closure)
-  const currentUserIdRef = useRef(null);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
@@ -61,7 +54,6 @@ function App() {
       const params = new URLSearchParams(hash.substring(1));
       const error = params.get('error');
       const errorCode = params.get('error_code');
-      const errorDescription = params.get('error_description');
 
       if (error === 'access_denied' && (errorCode === 'otp_expired' || errorCode === 'otp_disabled')) {
         // Limpa o hash da URL
@@ -71,113 +63,15 @@ function App() {
     }
   }, [appNavigate]);
 
-  // Inicialização da autenticação
+  // Intercepta evento PASSWORD_RECOVERY para redirecionar à página de reset
   useEffect(() => {
-    if (initRef.current) return;
-    initRef.current = true;
-    
-    let mounted = true;
-
-    const init = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (!mounted) return;
-        
-        if (error) {
-          setSession(null);
-          setLoading(false);
-          return;
-        }
-        
-        const currentSession = data?.session;
-        
-        if (currentSession?.user?.id) {
-          currentUserIdRef.current = currentSession.user.id;
-          setSession(currentSession);
-          
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('subscription_status, role')
-            .eq('id', currentSession.user.id)
-            .single();
-          
-          if (mounted) {
-            setSubscriptionStatus(profile?.subscription_status ?? null);
-            setProfileRole(profile?.role ?? null);
-            setSubscriptionChecked(true);
-          }
-        } else {
-          setSession(null);
-          setSubscriptionStatus(null);
-          setProfileRole(null);
-          setSubscriptionChecked(true);
-        }
-        
-      } catch (err) {
-        if (mounted) {
-          setSession(null);
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    init();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
-      if (!mounted) return;
-      if (event === 'INITIAL_SESSION') return;
-
-      // Intercepta o evento de recuperação de senha e redireciona para a página de reset
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
-        setSession(newSession);
         appNavigate('/reset-password', { replace: true });
-        return;
-      }
-      
-      if (event === 'SIGNED_OUT') {
-        currentUserIdRef.current = null;
-        setSession(null);
-        setSubscriptionStatus(null);
-        setProfileRole(null);
-        setSubscriptionChecked(false);
-      } else if (event === 'SIGNED_IN' && newSession?.user?.id) {
-        // Ignora se estamos na página de reset (sessão de recovery)
-        if (window.location.pathname === '/reset-password') {
-          setSession(newSession);
-          return;
-        }
-        // Ignora re-sign-in do mesmo usuário (ex: verificação de senha nas configurações)
-        if (currentUserIdRef.current === newSession.user.id) {
-          setSession(newSession);
-          return;
-        }
-        currentUserIdRef.current = newSession.user.id;
-        setSession(newSession);
-        setSubscriptionChecked(false);
-        supabase
-          .from('profiles')
-          .select('subscription_status, role')
-          .eq('id', newSession.user.id)
-          .single()
-          .then(({ data: profile }) => {
-            if (mounted) {
-              setSubscriptionStatus(profile?.subscription_status ?? null);
-              setProfileRole(profile?.role ?? null);
-              setSubscriptionChecked(true);
-            }
-          });
       }
     });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+    return () => subscription.unsubscribe();
+  }, [appNavigate]);
 
   const handleSectionChange = (sectionId) => {
     setActiveSection(sectionId);

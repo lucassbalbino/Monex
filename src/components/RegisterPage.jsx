@@ -96,11 +96,7 @@ const RegisterPage = () => {
         }
       };
 
-      console.log('supabase.signUp.request', { timestamp: new Date().toISOString(), payload: { ...signUpPayload, password: 'REDACTED' } });
-
       const { data, error: signUpError } = await supabase.auth.signUp(signUpPayload);
-
-      console.log('supabase.signUp.response', { timestamp: new Date().toISOString(), data, signUpError });
 
       if (signUpError) {
         if (signUpError.message.toLowerCase().includes("registered") || signUpError.status === 422) {

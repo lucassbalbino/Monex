@@ -1,18 +1,61 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useFinancialData } from '@/context/FinancialContext';
+
+const CATEGORY_COLORS = {
+  'Mercado': '#14B8A6',
+  'Lazer e Hobbies': '#8B5CF6',
+  'Transporte': '#F59E0B',
+  'Contas': '#10B981',
+  'Alimentação': '#EF4444',
+  'Saúde': '#3B82F6',
+  'Educação': '#6366F1',
+  'Moradia': '#EC4899',
+  'Cartão de Crédito': '#F97316',
+  'Dívidas': '#DC2626',
+  'Outros': '#94A3B8',
+};
 
 const ExpenseChart = () => {
-  const categories = [
-    { name: 'Mercado', amount: 450, percentage: 30, color: '#14B8A6' },
-    { name: 'Entretenimento', amount: 250, percentage: 17, color: '#8B5CF6' },
-    { name: 'Transporte', amount: 350, percentage: 23, color: '#F59E0B' },
-    { name: 'Contas', amount: 200, percentage: 13, color: '#10B981' },
-    { name: 'Outros', amount: 250, percentage: 17, color: '#6366F1' }
-  ];
+  const { transactions } = useFinancialData();
+
+  const categories = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const totals = {};
+    let totalExpenses = 0;
+
+    transactions.forEach(t => {
+      if (t.type !== 'expense') return;
+      const [year, month] = (t.date || '').split('-').map(Number);
+      if (year !== currentYear || (month - 1) !== currentMonth) return;
+
+      const amount = parseFloat(t.amount) || 0;
+      const cat = t.category || 'Outros';
+      totals[cat] = (totals[cat] || 0) + amount;
+      totalExpenses += amount;
+    });
+
+    if (totalExpenses === 0) return [];
+
+    return Object.entries(totals)
+      .map(([name, amount]) => ({
+        name,
+        amount: Math.round(amount * 100) / 100,
+        percentage: Math.round((amount / totalExpenses) * 100),
+        color: CATEGORY_COLORS[name] || '#94A3B8',
+      }))
+      .sort((a, b) => b.amount - a.amount);
+  }, [transactions]);
 
   return (
     <div className="bg-[#1E293B] rounded-xl border border-[#334155] p-6">
       <h2 className="text-xl font-bold text-white mb-6">Categorias de Despesas</h2>
+      {categories.length === 0 ? (
+        <p className="text-gray-500 text-sm text-center py-8">Nenhuma despesa registrada neste mês.</p>
+      ) : (
       <div className="space-y-4">
         {categories.map((category, index) => (
           <motion.div
@@ -38,6 +81,7 @@ const ExpenseChart = () => {
           </motion.div>
         ))}
       </div>
+      )}
     </div>
   );
 };

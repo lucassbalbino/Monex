@@ -247,9 +247,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <div className="bg-[#14B8A6] p-1.5 rounded-lg">
-                <Wallet className="h-5 w-5 text-white" />
-              </div>
+              <img src="/monex-logo.svg" alt="Logo Monex" className="h-8 w-auto" />
               <span className="text-xl font-bold text-white tracking-tight">Monex</span>
             </div>
             

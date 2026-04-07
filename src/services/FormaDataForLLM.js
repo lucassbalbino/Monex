@@ -1,4 +1,4 @@
-export function formatDataForLLM(clientData, credit_cards, debts, expenses, financialSummary, goals, payments, spendingLimits) {~
+export function formatDataForLLM(clientData, credit_cards, debts, expenses, financialSummary, goals, payments, spendingLimits) {
    return ` 
    ## Client Financial Data
 

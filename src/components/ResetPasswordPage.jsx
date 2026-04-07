@@ -46,8 +46,8 @@ const ResetPasswordPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (password.length < 6) {
-      toast({ variant: 'destructive', title: 'Senha fraca', description: 'Use ao menos 6 caracteres.' });
+    if (password.length < 8) {
+      toast({ variant: 'destructive', title: 'Senha fraca', description: 'Use ao menos 8 caracteres.' });
       return;
     }
     if (password !== confirm) {
@@ -136,7 +136,7 @@ const ResetPasswordPage = () => {
               <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
             </div>
             {password && password.length < 6 && (
-              <p className="text-xs text-red-400">Mínimo de 6 caracteres</p>
+              <p className="text-xs text-red-400">Mínimo de 8 caracteres</p>
             )}
           </div>
 
@@ -157,14 +157,14 @@ const ResetPasswordPage = () => {
             {confirm && password !== confirm && (
               <p className="text-xs text-red-400">As senhas não coincidem</p>
             )}
-            {confirm && password === confirm && confirm.length >= 6 && (
+            {confirm && password === confirm && confirm.length >= 8 && (
               <p className="text-xs text-green-400 flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Senhas coincidem</p>
             )}
           </div>
 
           <Button
             type="submit"
-            disabled={loading || password.length < 6 || password !== confirm}
+            disabled={loading || password.length < 8 || password !== confirm}
             className="w-full h-12 bg-[#14B8A6] hover:bg-[#0D9488] text-white font-bold mt-4 shadow-lg shadow-[#14B8A6]/20"
           >
             {loading ? (
